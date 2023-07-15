@@ -10,7 +10,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 # Create a schema view for API documentation
 schema_view = get_schema_view(
     openapi.Info(
-        title="Importlio API",
+        title="Importlio",
         default_version='v1',
         description="API documentation for Your Project",
         terms_of_service="https://your-project-terms.com",

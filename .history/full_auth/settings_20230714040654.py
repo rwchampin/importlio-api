@@ -58,7 +58,6 @@ INSTALLED_APPS = [
     'posts',
     'drf_yasg',
     'registrants',
-    'openai'
 ]
 
 MIDDLEWARE = [

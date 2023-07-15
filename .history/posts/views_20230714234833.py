@@ -12,7 +12,7 @@ class PostListView(generics.ListAPIView):
     authentication_classes = []
 
 class RecentPostListView(generics.ListAPIView):
-    queryset = Post.objects.all().order_by('-published_at')[:3]
+    queryset = Post.objects.all().order_by('-created_at')[:3]
     serializer_class = PostSerializer
     permission_classes = []
     authentication_classes = []
