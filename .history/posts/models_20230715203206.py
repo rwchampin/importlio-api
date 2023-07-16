@@ -74,7 +74,7 @@ class Post(AutoSlugMixin):
     categories = models.ManyToManyField(Category, blank=True)
     tags = models.ManyToManyField(Tag, blank=True)
     custom_fields = GenericRelation('CustomFieldValue')
-    readtime = models.CharField(max_length=20)
+    readtime = models.CharField(max_length=50)
     likes = models.IntegerField(default=0)
     dislikes = models.IntegerField(default=0)
 
@@ -89,7 +89,7 @@ class Post(AutoSlugMixin):
         if not self.slug:
             self.slug = slugify(self.get_slug_source())
 
-        self.readtime = self.get_readtime() 
+        self.minute_read = self.get_readtime() 
         super().save(*args, **kwargs)
 
     def __str__(self):

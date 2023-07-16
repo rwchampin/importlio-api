@@ -89,7 +89,7 @@ class Post(AutoSlugMixin):
         if not self.slug:
             self.slug = slugify(self.get_slug_source())
 
-        self.readtime = self.get_readtime() 
+        self.minute_read = self.get_readtime() 
         super().save(*args, **kwargs)
 
     def __str__(self):

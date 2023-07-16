@@ -74,22 +74,20 @@ class Post(AutoSlugMixin):
     categories = models.ManyToManyField(Category, blank=True)
     tags = models.ManyToManyField(Tag, blank=True)
     custom_fields = GenericRelation('CustomFieldValue')
-    readtime = models.CharField(max_length=20)
+    minute_read = models.IntegerField(default=0)
     likes = models.IntegerField(default=0)
     dislikes = models.IntegerField(default=0)
 
     def get_slug_source(self):
         return self.title
 
-    def get_readtime(self):
-      result = readtime.of_text(self.content)
-      return result.text
-  
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.get_slug_source())
 
-        self.readtime = self.get_readtime() 
+        # Calculate approximate minute read based on word count
+        word_count = len(re.findall(r'\w+', self.content))
+        self.minute_read = math.ceil(word_count / 200)  # Assuming average reading speed of 200 words per minute
         super().save(*args, **kwargs)
 
     def __str__(self):

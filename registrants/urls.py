@@ -1,11 +1,8 @@
-from django.urls import path, include
-from rest_framework import routers
+from django.urls import path
+from .views import RegistrantListCreateView, RegistrantDetailView
 
-from .views import RegistrantViewSet
-
-router = routers.DefaultRouter()
-router.register(r'registrants', RegistrantViewSet)
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path('registrants/create/', RegistrantListCreateView.as_view(), name='registrant-list-create'),
+    path('registrants/<int:pk>/', RegistrantDetailView.as_view(), name='registrant-detail'),
 ]

@@ -25,7 +25,7 @@ class PostSerializer(serializers.ModelSerializer):
     author = UserAccountSerializer()
     images = PostImageSerializer(many=True, read_only=True)
     custom_fields = CustomFieldValueSerializer(many=True, read_only=True)
-    published_at = serializers.DateTimeField(format="%m-%d-%Y")
+    published_at = serializers.DateTimeField(format="%Y-%m-%d")
     class Meta:
         model = Post
         fields = ('id', 'author', 'post_type', 'title', 'slug', 'content', 'published_at',
