@@ -229,7 +229,7 @@ SOCIAL_AUTH_FACEBOOK_PROFILE_EXTRA_PARAMS = {"fields": "email, first_name, last_
 
 CORS_ALLOWED_ORIGINS = getenv(
     "CORS_ALLOWED_ORIGINS",
-    "http://localhost:8000,http://127.0.0.1:8000,http://localhost:3000,http://127.0.0.1:3000,https://importlio.com,https://www.importlio.com,https://api.importlio.com,https://api.importlio.com",
+    "https://www.api.importlio.com,http://www.api.importlio.com,http://localhost:8000,http://127.0.0.1:8000,http://localhost:3000,http://127.0.0.1:3000,https://importlio.com,https://www.importlio.com,https://api.importlio.com,https://api.importlio.com",
 ).split(",")
 CORS_ALLOW_CREDENTIALS = True
 
