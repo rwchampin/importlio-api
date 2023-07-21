@@ -47,6 +47,14 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
 
+    amazon_associate_id = models.CharField(max_length=255, null=True, blank=True)
+    
+    address = models.CharField(max_length=255, null=True, blank=True)
+    city = models.CharField(max_length=255, null=True, blank=True)
+    state = models.CharField(max_length=255, null=True, blank=True)
+    country = models.CharField(max_length=255, null=True, blank=True)
+    tz = models.CharField(max_length=255, null=True, blank=True)
+
     objects = UserAccountManager()
 
     USERNAME_FIELD = 'email'
