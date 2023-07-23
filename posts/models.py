@@ -74,7 +74,7 @@ class Post(AutoSlugMixin):
     categories = models.ManyToManyField(Category, blank=True)
     tags = models.ManyToManyField(Tag, blank=True)
     custom_fields = GenericRelation('CustomFieldValue')
-    readtime = models.CharField(max_length=20)
+    readtime = models.CharField(max_length=20, blank=True, null=True)
     likes = models.IntegerField(default=0)
     dislikes = models.IntegerField(default=0)
 
