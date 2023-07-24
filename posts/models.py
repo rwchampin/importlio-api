@@ -24,6 +24,7 @@ class AutoSlugMixin(models.Model):
 
 class Category(AutoSlugMixin):
     name = models.CharField(max_length=100)
+    image = models.ImageField(upload_to='category_images/%Y/%m/%d/', blank=True, null=True)
 
     def get_slug_source(self):
         return self.name
@@ -34,7 +35,8 @@ class Category(AutoSlugMixin):
 
 class Tag(AutoSlugMixin):
     name = models.CharField(max_length=100)
-
+    image = models.ImageField(upload_to='tag_images/%Y/%m/%d/', blank=True, null=True)
+    
     def get_slug_source(self):
         return self.name
 
@@ -44,7 +46,8 @@ class Tag(AutoSlugMixin):
 
 class PostType(AutoSlugMixin):
     name = models.CharField(max_length=100)
-
+    image = models.ImageField(upload_to='post_type_images/%Y/%m/%d/', blank=True, null=True)
+    
     def get_slug_source(self):
         return self.name
 
@@ -77,7 +80,11 @@ class Post(AutoSlugMixin):
     readtime = models.CharField(max_length=20, blank=True, null=True)
     likes = models.IntegerField(default=0)
     dislikes = models.IntegerField(default=0)
-
+    featured_image = models.ImageField(upload_to='featured_images/%Y/%m/%d/', blank=True, null=True)
+    post_image_1 = models.ImageField(upload_to='post_images/%Y/%m/%d/', blank=True, null=True)
+    post_image_2 = models.ImageField(upload_to='post_images/%Y/%m/%d/', blank=True, null=True)
+    post_image_3 = models.ImageField(upload_to='post_images/%Y/%m/%d/', blank=True, null=True)
+    
     def get_slug_source(self):
         return self.title
 
