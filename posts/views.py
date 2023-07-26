@@ -1,8 +1,10 @@
-from rest_framework import generics
-from .models import Post
-from .serializers import PostSerializer, RecentPostSerializer
+from rest_framework import generics, viewsets
+from .models import Post, Tag, Category
+from .serializers import PostSerializer, RecentPostSerializer, TagSerializer, CategoryValueSerializer
 from rest_framework.permissions import AllowAny
-from rest_framework.generics import RetrieveAPIView, ListAPIView
+from rest_framework.generics import RetrieveAPIView, ListAPIView, CreateAPIView
+from rest_framework.response import Response
+from rest_framework import status
 
 class PostListView(generics.ListAPIView):
     queryset = Post.objects.all()
@@ -10,8 +12,20 @@ class PostListView(generics.ListAPIView):
     permission_classes = [AllowAny]
     authentication_classes = []
 
+
+class PostCreateAPIView(CreateAPIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+    
+    def post(self, request, *args, **kwargs):
+        serializer = PostSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 class RecentPostListView(generics.ListAPIView):
-    queryset = Post.objects.all().order_by("-published_at")[:3]
+    queryset = Post.objects.all()[:3]
     serializer_class = RecentPostSerializer
     permission_classes = [AllowAny]
     authentication_classes = []
@@ -21,6 +35,23 @@ class PostDetailView(RetrieveAPIView):
     serializer_class = PostSerializer
     permission_classes = [AllowAny]  # Update permissions as needed
     lookup_field = 'slug'
+    
+    def post(self, request, *args, **kwargs):
+        post = self.get_object()
+        post.likes += 1
+        post.save()
+        serializer = PostSerializer(post)
+        return Response({"post": serializer.data, "likes": post.likes}, status=status.HTTP_200_OK)
+
+    def delete(self, request, *args, **kwargs):
+        post = self.get_object()
+        if post.likes > 0:
+            post.likes -= 1
+            post.save()
+            serializer = PostSerializer(post)
+            return Response({"post": serializer.data, "likes": post.likes}, status=status.HTTP_200_OK)
+        else:
+            return Response({"detail": "No likes to remove.", "likes": post.likes}, status=status.HTTP_400_BAD_REQUEST)
     
     
 class PostsByCategoryView(ListAPIView):
@@ -57,3 +88,15 @@ class PostsByPostTypeView(ListAPIView):
             return Post.objects.filter(post_type__name=post_type)
         else:
             return Post.objects.all()
+        
+class TagListView(generics.ListAPIView):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+class CategoryListView(generics.ListAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategoryValueSerializer
+    permission_classes = [AllowAny]
+    authentication_classes = []

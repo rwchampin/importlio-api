@@ -40,19 +40,21 @@ class PostSerializer(serializers.ModelSerializer):
     # custom_fields = CustomFieldValueSerializer(many=True, read_only=True)
     categories = CategoryValueSerializer(many=True, read_only=True)
     tags = TagSerializer(many=True, read_only=True)
-    published_at = serializers.DateTimeField(format="%m-%d-%Y")
+    published = serializers.DateTimeField(format="%m-%d-%Y")
+    updated = serializers.DateTimeField(format="%m-%d-%Y")
 
     class Meta:
         model = Post
-        fields = ( 'title', 'slug', 'content', 'published_at', 'post_type',
+        fields = ( 'title', 'slug', 'content', 'post_type','published','updated',
                   'categories', 'tags', 'readtime', 'likes', 'dislikes', 'featured_image', 'post_image_1', 'post_image_2', 'post_image_3')
 
 class RecentPostSerializer(serializers.ModelSerializer):
     categories = CategoryValueSerializer(many=True, read_only=True)
     tags = TagSerializer(many=True, read_only=True)
-    published_at = serializers.DateTimeField(format="%m-%d-%Y")
+    published = serializers.DateTimeField(format="%m-%d-%Y")
+    updated = serializers.DateTimeField(format="%m-%d-%Y")
 
     class Meta:
         model = Post
-        fields = ('title', 'slug', 'content', 'published_at', 'post_type',
+        fields = ('title', 'slug', 'content', 'published', 'updated', 'post_type',
                   'categories', 'tags', 'readtime', 'likes', 'dislikes', 'featured_image', 'post_image_1', 'post_image_2', 'post_image_3')

@@ -6,10 +6,12 @@ from rest_framework import permissions
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
-from rest_framework import routers
+ 
+
+from products.urls import urlpatterns as product_urls
+ 
 
 # Import the product scraping URLs
-from products.urls import urlpatterns as product_urls
 
 # Create a schema view for API documentation
 schema_view = get_schema_view(

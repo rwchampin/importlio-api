@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.utils.text import slugify
+from django.utils import timezone
+
 from users.models import UserAccount as User
 import math
 import re
@@ -69,11 +71,11 @@ class Field(models.Model):
 
 
 class Post(AutoSlugMixin):
-    author = models.ForeignKey(User, on_delete=models.CASCADE)
-    post_type = models.ForeignKey(PostType, on_delete=models.CASCADE)
+    # author = models.ForeignKey(User, on_delete=models.CASCADE)
+    post_type = models.ForeignKey(PostType, on_delete=models.CASCADE, blank=True, null=True)
     title = models.CharField(max_length=200)
     content = models.TextField()
-    published_at = models.DateTimeField(auto_now_add=True)
+    published = models.DateTimeField(editable=False, default=timezone.now)
     categories = models.ManyToManyField(Category, blank=True)
     tags = models.ManyToManyField(Tag, blank=True)
     custom_fields = GenericRelation('CustomFieldValue')
@@ -82,8 +84,9 @@ class Post(AutoSlugMixin):
     dislikes = models.IntegerField(default=0)
     featured_image = models.ImageField(upload_to='featured_images/%Y/%m/%d/', blank=True, null=True)
     post_image_1 = models.ImageField(upload_to='post_images/%Y/%m/%d/', blank=True, null=True)
-    post_image_2 = models.ImageField(upload_to='post_images/%Y/%m/%d/', blank=True, null=True)
+    post_image_2 = models.ImageField(upload_to                                                                                                                                                                                                          ='post_images/%Y/%m/%d/', blank=True, null=True)
     post_image_3 = models.ImageField(upload_to='post_images/%Y/%m/%d/', blank=True, null=True)
+    updated = models.DateTimeField(default=timezone.now)
     
     def get_slug_source(self):
         return self.title
@@ -92,7 +95,10 @@ class Post(AutoSlugMixin):
       result = readtime.of_text(self.content)
       return result.text
   
+        
     def save(self, *args, **kwargs):
+        if not self.published:
+            self.published = timezone.now()
         if not self.slug:
             self.slug = slugify(self.get_slug_source())
 
