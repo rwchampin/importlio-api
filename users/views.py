@@ -103,9 +103,6 @@ class CustomTokenVerifyView(TokenVerifyView):
 
         if access_token:
             request.data['token'] = access_token
-            res = requests.get("https://www.googleapis.com/oauth2/v3/userinfo?" + access_token)
-            json = res.json()
-            import pdb; pdb.set_trace()
         return super().post(request, *args, **kwargs)
 
 

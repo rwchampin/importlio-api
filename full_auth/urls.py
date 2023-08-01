@@ -35,6 +35,8 @@ urlpatterns = [
     path("api/", include("registrants.urls")),
     path("api/", include("proxies.urls")),
     path("api/", include("products.urls")),
+    path("api/", include("customers.urls")),
+    
     path(
         "api/docs/",
         schema_view.with_ui("swagger", cache_timeout=0),

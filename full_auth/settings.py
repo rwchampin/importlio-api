@@ -16,6 +16,14 @@ from os import getenv, path
 from pathlib import Path
 from django.core.management.utils import get_random_secret_key
 import dotenv
+#this is wrong
+# import dotenv
+
+#this lib is required for the dotenv to work
+
+
+
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -59,6 +67,7 @@ INSTALLED_APPS = [
     "registrants",
     "proxies",
     "products",
+    'customers'
 ]
 
 MIDDLEWARE = [
@@ -100,8 +109,13 @@ WSGI_APPLICATION = "full_auth.wsgi.application"
 if DEVELOPMENT_MODE is True:
     DATABASES = {
         "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
+            "HOST": "app-e7de05f8-4982-41da-930d-8ff068dccf5f-do-user-14345350-0.b.db.ondigitalocean.com",
+            "PORT": "25060",
+            "USER": "rwchampin",
+            "PASSWORD": "AVNS_kmfP8QILK-eZxU4qosE",
+            "NAME": "defaultdb",
+            "ENGINE": "django.db.backends.postgresql_psycopg2",
+            "SSLMODE": "require",
         }
     }
 elif len(sys.argv) > 0 and sys.argv[1] != "collectstatic":
@@ -241,3 +255,11 @@ CORS_ALLOW_CREDENTIALS = True
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "users.UserAccount"
+
+
+
+# Import the local_settings module
+try:
+    from local_settings import *
+except ImportError:
+    pass
