@@ -2,6 +2,7 @@ from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+import requests
 from djoser.social.views import ProviderAuthView
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -13,11 +14,12 @@ from rest_framework_simplejwt.views import (
 class CustomProviderAuthView(ProviderAuthView):
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
-
         if response.status_code == 201:
             access_token = response.data.get('access')
             refresh_token = response.data.get('refresh')
 
+            
+            
             response.set_cookie(
                 'access',
                 access_token,
@@ -101,7 +103,9 @@ class CustomTokenVerifyView(TokenVerifyView):
 
         if access_token:
             request.data['token'] = access_token
-
+            res = requests.get("https://www.googleapis.com/oauth2/v3/userinfo?" + access_token)
+            json = res.json()
+            import pdb; pdb.set_trace()
         return super().post(request, *args, **kwargs)
 
 

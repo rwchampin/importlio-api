@@ -1,21 +1,24 @@
-from rest_framework import generics, viewsets
-from .models import Post, Tag, Category
-from .serializers import PostSerializer, RecentPostSerializer, TagSerializer, CategoryValueSerializer
+from rest_framework import generics, viewsets, status
+from .models import Post, Tag, Category, PostType
+from .serializers import PostSerializer, RecentPostSerializer, TagSerializer, CategoryValueSerializer, PostTypeSerializer
 from rest_framework.permissions import AllowAny
 from rest_framework.generics import RetrieveAPIView, ListAPIView, CreateAPIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.pagination import PageNumberPagination
 
 class PostListView(generics.ListAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = [AllowAny]
     authentication_classes = []
-
+    pagination_class = PageNumberPagination
 
 class PostCreateAPIView(CreateAPIView):
     authentication_classes = []
     permission_classes = [AllowAny]
+    parser_classes = [MultiPartParser, FormParser]
     
     def post(self, request, *args, **kwargs):
         serializer = PostSerializer(data=request.data)
@@ -25,7 +28,7 @@ class PostCreateAPIView(CreateAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class RecentPostListView(generics.ListAPIView):
-    queryset = Post.objects.all()[:3]
+    queryset = Post.objects.all()[:4]
     serializer_class = RecentPostSerializer
     permission_classes = [AllowAny]
     authentication_classes = []
@@ -98,5 +101,11 @@ class TagListView(generics.ListAPIView):
 class CategoryListView(generics.ListAPIView):
     queryset = Category.objects.all()
     serializer_class = CategoryValueSerializer
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    
+class PostTypeListView(generics.ListAPIView):
+    queryset = PostType.objects.all()
+    serializer_class = PostTypeSerializer
     permission_classes = [AllowAny]
     authentication_classes = []
