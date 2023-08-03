@@ -6,6 +6,7 @@ from .views import (
     PostDetailView,
     PostsByCategoryView,
     PostsByTagView,
+    PostsByPostTypeView,
     TagListView,
     CategoryListView,
     PostTypeListView
@@ -18,8 +19,10 @@ urlpatterns = [
     path('posts/<slug:slug>/', PostDetailView.as_view(), name='post-detail'),
     path('posts/<int:pk>/likes/add/', PostDetailView.as_view(), name='post-like-add'),
     path('posts/<int:pk>/likes/remove/', PostDetailView.as_view(), name='post-like-remove'),
-    path('posts/tags/', PostsByTagView.as_view(), name='posts-by-tag'),  # Updated here
-    path('posts/categories/', PostsByCategoryView.as_view(), name='posts-by-category'),  # Updated here
+    path('posts/tags/<int:pk>/', PostsByTagView.as_view(), name='posts-by-tag'),  # Updated here
+    path('posts/categories/<int:pk>/', PostsByCategoryView.as_view(), name='posts-by-category'),  # Updated here
+    path('posts/post-types/<int:pk>/', PostsByPostTypeView.as_view(), name='posts-by-post-type'),  # Updated here
+    
     path('posts/tags/list/', TagListView.as_view(), name='tag-list'),
     path('posts/categories/list/', CategoryListView.as_view(), name='category-list'),
     path('posts/post-types/list/', PostTypeListView.as_view(), name='post-type-list'),

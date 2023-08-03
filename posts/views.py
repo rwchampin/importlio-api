@@ -72,13 +72,15 @@ class PostsByCategoryView(ListAPIView):
 class PostsByTagView(ListAPIView):
     serializer_class = PostSerializer
     permission_classes = [AllowAny]  # Update permissions as needed
-
+    
     def get_queryset(self):
-        tag_name = self.request.query_params.get('tag')
-        if tag_name:
-            return Post.objects.filter(tags__name=tag_name)
-        else:
-            return Post.objects.all()
+        tag_pk = self.kwargs.get('pk')
+        if tag_pk is not None:
+            # Retrieve posts with the specified tag
+            posts = Post.objects.filter(tags__id=tag_pk)
+            return posts
+        return Post.objects.none()
+
         
         
 class PostsByPostTypeView(ListAPIView):

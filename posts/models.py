@@ -4,15 +4,33 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils.text import slugify
 from django.utils import timezone
 
-from users.models import UserAccount as User
-import math
-import re
+from users.models import UserAccount as Users
 import readtime
 
 STATUS_CHOICES = (
     ('draft', 'Draft'),
     ('published', 'Published'),
 )
+
+STATUS_CHOICES = (
+    ('red', 'Red'),
+    ('blue', 'Blue'),
+    ('green', 'Green'),
+    ('yellow', 'Yellow'),
+    ('orange', 'Orange'),
+    ('purple', 'Purple'),
+    ('pink', 'Pink'),
+    ('brown', 'Brown'),
+    ('grey', 'Grey'),
+    ('black', 'Black'),
+    ('white', 'White'),
+    ('magenta', 'Magenta'),
+    ('cyan', 'Cyan'),
+    ('teal', 'Teal'),
+    ('lime', 'Lime'),
+    ('amber', 'Amber'),
+)
+
 class AutoSlugMixin(models.Model):
     slug = models.SlugField(unique=True, blank=True)
 
@@ -22,7 +40,8 @@ class AutoSlugMixin(models.Model):
         super().save(*args, **kwargs)
 
     def get_slug_source(self):
-        raise NotImplementedError("Subclasses of AutoSlugMixin must provide a get_slug_source() method.")
+        raise NotImplementedError(
+            "Subclasses of AutoSlugMixin must provide a get_slug_source() method.")
 
     class Meta:
         abstract = True
@@ -30,7 +49,9 @@ class AutoSlugMixin(models.Model):
 
 class Category(AutoSlugMixin):
     name = models.CharField(max_length=100)
-    image = models.ImageField(upload_to='category_images/%Y/%m/%d/', blank=True, null=True)
+    image = models.ImageField(
+        upload_to='category_images/%Y/%m/%d/', blank=True, null=True)
+    color = models.CharField(max_length=100, choices=STATUS_CHOICES, default='draft')
 
     def get_slug_source(self):
         return self.name
@@ -41,8 +62,9 @@ class Category(AutoSlugMixin):
 
 class Tag(AutoSlugMixin):
     name = models.CharField(max_length=100)
-    image = models.ImageField(upload_to='tag_images/%Y/%m/%d/', blank=True, null=True)
-    
+    image = models.ImageField(
+        upload_to='tag_images/%Y/%m/%d/', blank=True, null=True)
+    color = models.CharField(max_length=100, choices=STATUS_CHOICES, default='draft')
     def get_slug_source(self):
         return self.name
 
@@ -52,7 +74,9 @@ class Tag(AutoSlugMixin):
 
 class PostType(AutoSlugMixin):
     name = models.CharField(max_length=100)
-    image = models.ImageField(upload_to='post_type_images/%Y/%m/%d/', blank=True, null=True)
+    image = models.ImageField(
+        upload_to='post_type_images/%Y/%m/%d/', blank=True, null=True)
+    color = models.CharField(max_length=100, choices=STATUS_CHOICES, default='draft')
     
     def get_slug_source(self):
         return self.name
@@ -76,11 +100,12 @@ class Field(models.Model):
 
 class Post(AutoSlugMixin):
     # author = models.ForeignKey(User, on_delete=models.CASCADE)
-    post_type = models.ForeignKey(PostType, on_delete=models.CASCADE, blank=True, null=True)
+    post_type = models.ForeignKey(
+        PostType, on_delete=models.CASCADE, blank=True, null=True)
     title = models.CharField(max_length=400)
-    subtitle = models.CharField(max_length=400,blank=True, null=True)
-    headline = models.CharField(max_length=400,blank=True, null=True)
-    shadowText = models.CharField(max_length=300,blank=True, null=True)
+    subtitle = models.CharField(max_length=400, blank=True, null=True)
+    headline = models.CharField(max_length=400, blank=True, null=True)
+    shadowText = models.CharField(max_length=300, blank=True, null=True)
     content = models.TextField()
     excerpt = models.TextField(blank=True, null=True)
     published = models.DateTimeField(editable=False, default=timezone.now)
@@ -90,25 +115,29 @@ class Post(AutoSlugMixin):
     readtime = models.CharField(max_length=20, blank=True, null=True)
     likes = models.IntegerField(default=0)
     dislikes = models.IntegerField(default=0)
-    featured_image = models.ImageField(upload_to='featured_images/%Y/%m/%d/', blank=True, null=True)
-    post_image_1 = models.ImageField(upload_to='post_images/%Y/%m/%d/', blank=True, null=True)
-    post_image_2 = models.ImageField(upload_to                                                                                                                                                                                                          ='post_images/%Y/%m/%d/', blank=True, null=True)
-    post_image_3 = models.ImageField(upload_to='post_images/%Y/%m/%d/', blank=True, null=True)
+    featured_image = models.ImageField(
+        upload_to='featured_images/%Y/%m/%d/', blank=True, null=True)
+    post_image_1 = models.ImageField(
+        upload_to='post_images/%Y/%m/%d/', blank=True, null=True)
+    post_image_2 = models.ImageField(
+        upload_to='post_images/%Y/%m/%d/', blank=True, null=True)
+    post_image_3 = models.ImageField(
+        upload_to='post_images/%Y/%m/%d/', blank=True, null=True)
     updated = models.DateTimeField(default=timezone.now)
-    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='draft')
+    status = models.CharField(
+        max_length=50, choices=STATUS_CHOICES, default='draft')
 
     # SEO
-    seo_title = models.CharField(max_length=400,blank=True, null=True)
+    seo_title = models.CharField(max_length=400, blank=True, null=True)
     seo_description = models.TextField(blank=True, null=True)
 
     def get_slug_source(self):
         return self.title
 
     def get_readtime(self):
-      result = readtime.of_text(self.content)
-      return result.text
-  
-        
+        result = readtime.of_text(self.content)
+        return result.text
+
     def save(self, *args, **kwargs):
         if not self.published:
             self.published = timezone.now()
@@ -117,13 +146,22 @@ class Post(AutoSlugMixin):
         if not self.slug:
             self.slug = slugify(self.get_slug_source())
 
-        self.readtime = self.get_readtime() 
+        self.readtime = self.get_readtime()
         super().save(*args, **kwargs)
 
     def __str__(self):
         return self.title
 
 
+class Comment(models.Model):
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    author = models.ForeignKey(Users, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, related_name='comments', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"Comment by {self.author.username} on {self.blog_post.title}"
+    
 class PostImage(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE)
     image = models.ImageField(upload_to='post_images/%Y/%m/%d/')
