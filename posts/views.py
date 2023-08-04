@@ -60,7 +60,8 @@ class PostDetailView(RetrieveAPIView):
 class PostsByCategoryView(ListAPIView):
     serializer_class = PostSerializer
     permission_classes = [AllowAny]  # Update permissions as needed
-
+    lookup_field='name'
+    
     def get_queryset(self):
         category_name = self.request.query_params.get('category')
         if category_name:
@@ -72,7 +73,7 @@ class PostsByCategoryView(ListAPIView):
 class PostsByTagView(ListAPIView):
     serializer_class = PostSerializer
     permission_classes = [AllowAny]  # Update permissions as needed
-    
+    lookup_field='name'
     def get_queryset(self):
         tag_pk = self.kwargs.get('pk')
         if tag_pk is not None:
@@ -86,7 +87,8 @@ class PostsByTagView(ListAPIView):
 class PostsByPostTypeView(ListAPIView):
     serializer_class = PostSerializer
     permission_classes = [AllowAny]  # Update permissions as needed
-
+    lookup_field='name'
+    
     def get_queryset(self):
         post_type = self.request.query_params.get('post_type')
         if post_type:
@@ -99,15 +101,17 @@ class TagListView(generics.ListAPIView):
     serializer_class = TagSerializer
     permission_classes = [AllowAny]
     authentication_classes = []
-
+    lookup_field='name'
 class CategoryListView(generics.ListAPIView):
     queryset = Category.objects.all()
     serializer_class = CategoryValueSerializer
     permission_classes = [AllowAny]
     authentication_classes = []
+    lookup_field='name'
     
 class PostTypeListView(generics.ListAPIView):
     queryset = PostType.objects.all()
     serializer_class = PostTypeSerializer
     permission_classes = [AllowAny]
     authentication_classes = []
+    lookup_field='name'
