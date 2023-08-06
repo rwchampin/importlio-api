@@ -101,13 +101,12 @@ class TagListView(generics.ListAPIView):
     serializer_class = TagSerializer
     permission_classes = [AllowAny]
     authentication_classes = []
-    lookup_field='name'
+
 class CategoryListView(generics.ListAPIView):
     queryset = Category.objects.all()
     serializer_class = CategoryValueSerializer
     permission_classes = [AllowAny]
     authentication_classes = []
-    lookup_field='name'
     
 class PostTypeListView(generics.ListAPIView):
     queryset = PostType.objects.all()

@@ -19,11 +19,17 @@ urlpatterns = [
     path('posts/<slug:slug>/', PostDetailView.as_view(), name='post-detail'),
     path('posts/<int:pk>/likes/add/', PostDetailView.as_view(), name='post-like-add'),
     path('posts/<int:pk>/likes/remove/', PostDetailView.as_view(), name='post-like-remove'),
-    path('posts/tags/<slug:name>/', PostsByTagView.as_view(), name='posts-by-tag'),  # Updated here
-    path('posts/categories/<slug:name>/', PostsByCategoryView.as_view(), name='posts-by-category'),  # Updated here
-    path('posts/post-types/<slug:name>/', PostsByPostTypeView.as_view(), name='posts-by-post-type'),  # Updated here
-    
+    # List endpoints for tags and categories
     path('posts/tags/list/', TagListView.as_view(), name='tag-list'),
     path('posts/categories/list/', CategoryListView.as_view(), name='category-list'),
     path('posts/post-types/list/', PostTypeListView.as_view(), name='post-type-list'),
+    
+    # Endpoints for retrieving posts by tag and category
+    path('posts/tags/<slug:name>/', PostsByTagView.as_view(), name='posts-by-tag'),
+    path('posts/categories/<slug:name>/', PostsByCategoryView.as_view(), name='posts-by-category'),
+    path('posts/post-types/<slug:name>/', PostsByPostTypeView.as_view(), name='posts-by-post-type'),
 ]
+
+
+
+

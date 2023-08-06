@@ -256,6 +256,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "users.UserAccount"
 
+ELASTICSEARCH_DSL = {
+    'default': {
+        'hosts': 'localhost:9200'  # Specify the Elasticsearch host
+    },
+}
 
 
 # Import the local_settings module
