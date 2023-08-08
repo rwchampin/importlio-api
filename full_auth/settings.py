@@ -108,14 +108,9 @@ WSGI_APPLICATION = "full_auth.wsgi.application"
 
 if DEVELOPMENT_MODE is True:
     DATABASES = {
-        "default": {
-            "HOST": "app-e7de05f8-4982-41da-930d-8ff068dccf5f-do-user-14345350-0.b.db.ondigitalocean.com",
-            "PORT": "25060",
-            "USER": "rwchampin",
-            "PASSWORD": "AVNS_kmfP8QILK-eZxU4qosE",
-            "NAME": "defaultdb",
-            "ENGINE": "django.db.backends.postgresql_psycopg2",
-            "SSLMODE": "require",
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
 elif len(sys.argv) > 0 and sys.argv[1] != "collectstatic":
