@@ -19,7 +19,13 @@ def generate_unique_slug(model, value, max_length):
 def add_post_types(apps, schema_editor):
     PostType = apps.get_model('posts', 'PostType')
     post_types = [
-        'Blog Post',
+        'Entrepreneurship and Startups',
+        'Business Strategy',
+        "Amazon Product Imports",
+        "Shopify Dropshipping",
+        "Ecommerce Strategies",
+        "Product Management",
+        "Dropship Business Tips"
         # Add more default post types here if needed
     ]
 
@@ -35,6 +41,16 @@ def add_categories(apps, schema_editor):
         'Shopify',
         'Amazon',
         'Dropshipping',
+        "Amazon Dropshipping",
+        "Shopify Store Setup",
+        "Ecommerce Marketing",
+        "Product Research",
+        "Inventory Management",
+        "Supplier Collaboration",
+        "Payment Gateways",
+        "Shipping Strategies",
+        "Customer Experience",
+        "Conversion Optimization"
         # Add more default categories here if needed
     ]
 
@@ -60,6 +76,16 @@ def add_tags(apps, schema_editor):
         'Ecommerce Store',
         'Ecommerce Business',
         'Ecommerce Marketing',
+        "Dropship Products",
+        "Shopify Importer",
+        "Ecommerce SEO",
+        "Online Business",
+        "Product Listings",
+        "Sourcing Suppliers",
+        "Order Fulfillment",
+        "Digital Marketing",
+        "Customer Retention",
+        "User Engagement"
         # Add more default tags here if needed
     ]
 

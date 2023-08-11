@@ -1,6 +1,9 @@
 from rest_framework import serializers
 from .models import Post, PostImage, CustomFieldValue, Tag, Category,PostType
 from users.models import UserAccount
+from django.core.files.base import ContentFile
+import base64
+
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
@@ -18,17 +21,26 @@ class PostTypeSerializer(serializers.ModelSerializer):
         model = PostType
         fields = '__all__'
 
+class Base64ImageField(serializers.ImageField):
+    def to_internal_value(self, data):
+        if isinstance(data, str) and data.startswith('data:image'):
+            format, imgstr = data.split(';base64,')
+            ext = format.split('/')[-1]
+            data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
+        return super().to_internal_value(data)
+    
 class PostSerializer(serializers.ModelSerializer):
-    categories = CategoryValueSerializer(many=True, read_only=True, required=False)
-    tags = TagSerializer(many=True, read_only=True, required=False)
     published = serializers.DateTimeField(format="%m-%d-%Y", required=False)
     updated = serializers.DateTimeField(format="%m-%d-%Y", required=False)
-    post_type = PostTypeSerializer( required=False )
+    featured_image = Base64ImageField(required=False)
+    post_image_1 = Base64ImageField(required=False)
+    post_image_2 = Base64ImageField(required=False)
+    post_image_3 = Base64ImageField(required=False)
     lookup_field = 'slug'
     pagination_class = []
     class Meta:
         model = Post
-        fields = ( 'title', 'slug', 'content', 'post_type','published','updated',
+        fields = ( 'id', 'title', 'slug', 'content', 'post_type','published','updated','headline', 'subtitle', 'shadow_text', 'excerpt', 'seo_title', 'seo_description',
                   'categories', 'tags', 'readtime', 'likes', 'dislikes', 'featured_image', 'post_image_1', 'post_image_2', 'post_image_3')
         
     def get_post_type(self, obj):

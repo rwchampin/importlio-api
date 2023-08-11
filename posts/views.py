@@ -7,6 +7,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.pagination import PageNumberPagination
+from django.core.files.base import ContentFile
+import base64
 
 class PostListView(generics.ListAPIView):
     queryset = Post.objects.all()
@@ -18,9 +20,17 @@ class PostListView(generics.ListAPIView):
 class PostCreateAPIView(CreateAPIView):
     authentication_classes = []
     permission_classes = [AllowAny]
-    parser_classes = [MultiPartParser, FormParser]
+    # parser_classes = [MultiPartParser, FormParser]
     
-    def post(self, request, *args, **kwargs):
+    def create(self, request, *args, **kwargs):
+        # Convert base64-encoded image to a file
+        featured_image_data = request.data.get('featured_image')
+        if featured_image_data:
+            image_format, image_data = featured_image_data.split(';base64,')
+            image_extension = image_format.split('/')[-1]
+            featured_image = ContentFile(base64.b64decode(image_data), name=f'featured_image.{image_extension}')
+            request.data['featured_image'] = featured_image
+
         serializer = PostSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()

@@ -49,9 +49,6 @@ class AutoSlugMixin(models.Model):
 
 class Category(AutoSlugMixin):
     name = models.CharField(max_length=100)
-    image = models.ImageField(
-        upload_to='category_images/%Y/%m/%d/', blank=True, null=True)
-    color = models.CharField(max_length=100, choices=STATUS_CHOICES, default='draft')
 
     def get_slug_source(self):
         return self.name
@@ -62,9 +59,7 @@ class Category(AutoSlugMixin):
 
 class Tag(AutoSlugMixin):
     name = models.CharField(max_length=100)
-    image = models.ImageField(
-        upload_to='tag_images/%Y/%m/%d/', blank=True, null=True)
-    color = models.CharField(max_length=100, choices=STATUS_CHOICES, default='draft')
+
     def get_slug_source(self):
         return self.name
 
@@ -74,10 +69,7 @@ class Tag(AutoSlugMixin):
 
 class PostType(AutoSlugMixin):
     name = models.CharField(max_length=100)
-    image = models.ImageField(
-        upload_to='post_type_images/%Y/%m/%d/', blank=True, null=True)
-    color = models.CharField(max_length=100, choices=STATUS_CHOICES, default='draft')
-    
+
     def get_slug_source(self):
         return self.name
 
@@ -105,7 +97,7 @@ class Post(AutoSlugMixin):
     title = models.CharField(max_length=400)
     subtitle = models.CharField(max_length=400, blank=True, null=True)
     headline = models.CharField(max_length=400, blank=True, null=True)
-    shadowText = models.CharField(max_length=300, blank=True, null=True)
+    shadow_text = models.CharField(max_length=300, blank=True, null=True)
     content = models.TextField()
     excerpt = models.TextField(blank=True, null=True)
     published = models.DateTimeField(editable=False, default=timezone.now)
