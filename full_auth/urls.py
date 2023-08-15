@@ -36,6 +36,7 @@ urlpatterns = [
     path("api/", include("proxies.urls")),
     path("api/", include("products.urls")),
     path("api/", include("customers.urls")),
+    path("api/", include("openai.urls")),
     
     path(
         "api/docs/",

@@ -6,6 +6,7 @@ import base64
 
 
 class TagSerializer(serializers.ModelSerializer):
+    lookup_field = 'slug'
     class Meta:
         model = Tag
         fields = '__all__'
@@ -33,15 +34,15 @@ class PostSerializer(serializers.ModelSerializer):
     published = serializers.DateTimeField(format="%m-%d-%Y", required=False)
     updated = serializers.DateTimeField(format="%m-%d-%Y", required=False)
     featured_image = Base64ImageField(required=False)
-    post_image_1 = Base64ImageField(required=False)
-    post_image_2 = Base64ImageField(required=False)
-    post_image_3 = Base64ImageField(required=False)
+    tags = TagSerializer(many=True, read_only=True)
+    categories = CategoryValueSerializer(many=True, read_only=True)
+
     lookup_field = 'slug'
     pagination_class = []
     class Meta:
         model = Post
-        fields = ( 'id', 'title', 'slug', 'content', 'post_type','published','updated','headline', 'subtitle', 'shadow_text', 'excerpt', 'seo_title', 'seo_description',
-                  'categories', 'tags', 'readtime', 'likes', 'dislikes', 'featured_image', 'post_image_1', 'post_image_2', 'post_image_3')
+        fields = ( 'id','status', 'title', 'slug', 'content', 'post_type','published','updated','headline', 'subtitle', 'shadowText', 'excerpt', 'seo_title', 'seo_description',
+                  'categories', 'tags', 'readtime', 'likes', 'dislikes', 'featured_image')
         
     def get_post_type(self, obj):
         return obj.post_type.name if obj.post_type else None
@@ -51,9 +52,9 @@ class RecentPostSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     published = serializers.DateTimeField(format="%m-%d-%Y")
     updated = serializers.DateTimeField(format="%m-%d-%Y")
-    post_type = PostTypeSerializer()
+
 
     class Meta:
         model = Post
         fields = ('title', 'slug', 'content', 'published', 'updated', 'post_type',
-                  'categories', 'tags', 'readtime', 'likes', 'dislikes', 'featured_image', 'post_image_1', 'post_image_2', 'post_image_3')
+                  'categories', 'tags', 'readtime', 'likes', 'dislikes', 'featured_image')

@@ -70,7 +70,7 @@ class PostDetailView(RetrieveAPIView):
 class PostsByCategoryView(ListAPIView):
     serializer_class = PostSerializer
     permission_classes = [AllowAny]  # Update permissions as needed
-    lookup_field='name'
+    lookup_field='slug'
     
     def get_queryset(self):
         category_name = self.request.query_params.get('category')
@@ -83,12 +83,13 @@ class PostsByCategoryView(ListAPIView):
 class PostsByTagView(ListAPIView):
     serializer_class = PostSerializer
     permission_classes = [AllowAny]  # Update permissions as needed
-    lookup_field='name'
+    lookup_field='slug'
+    
     def get_queryset(self):
-        tag_pk = self.kwargs.get('pk')
+        tag_pk = self.kwargs.get('slug')
         if tag_pk is not None:
             # Retrieve posts with the specified tag
-            posts = Post.objects.filter(tags__id=tag_pk)
+            posts = Post.objects.filter(tags__slug=tag_pk)
             return posts
         return Post.objects.none()
 
@@ -97,7 +98,7 @@ class PostsByTagView(ListAPIView):
 class PostsByPostTypeView(ListAPIView):
     serializer_class = PostSerializer
     permission_classes = [AllowAny]  # Update permissions as needed
-    lookup_field='name'
+    lookup_field='slug'
     
     def get_queryset(self):
         post_type = self.request.query_params.get('post_type')

@@ -108,9 +108,13 @@ WSGI_APPLICATION = "full_auth.wsgi.application"
 
 if DEVELOPMENT_MODE is True:
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "HOST": "importlio-development.cmscwzzyarwo.us-east-1.rds.amazonaws.com",
+            "PORT": "3306",
+            "NAME": "importlio_development",
+            "USER": "rwchampin",
+            "PASSWORD": "BlackMagic0214$",
         }
     }
 elif len(sys.argv) > 0 and sys.argv[1] != "collectstatic":
@@ -251,15 +255,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "users.UserAccount"
 
-ELASTICSEARCH_DSL = {
-    'default': {
-        'hosts': 'localhost:9200'  # Specify the Elasticsearch host
-    },
-}
+ 
 
-
-# Import the local_settings module
-try:
-    from local_settings import *
-except ImportError:
-    pass
+ 

@@ -7,28 +7,9 @@ from django.utils import timezone
 from users.models import UserAccount as Users
 import readtime
 
-STATUS_CHOICES = (
+POST_STATUS = (
     ('draft', 'Draft'),
     ('published', 'Published'),
-)
-
-STATUS_CHOICES = (
-    ('red', 'Red'),
-    ('blue', 'Blue'),
-    ('green', 'Green'),
-    ('yellow', 'Yellow'),
-    ('orange', 'Orange'),
-    ('purple', 'Purple'),
-    ('pink', 'Pink'),
-    ('brown', 'Brown'),
-    ('grey', 'Grey'),
-    ('black', 'Black'),
-    ('white', 'White'),
-    ('magenta', 'Magenta'),
-    ('cyan', 'Cyan'),
-    ('teal', 'Teal'),
-    ('lime', 'Lime'),
-    ('amber', 'Amber'),
 )
 
 class AutoSlugMixin(models.Model):
@@ -49,7 +30,7 @@ class AutoSlugMixin(models.Model):
 
 class Category(AutoSlugMixin):
     name = models.CharField(max_length=100)
-
+    
     def get_slug_source(self):
         return self.name
 
@@ -97,7 +78,7 @@ class Post(AutoSlugMixin):
     title = models.CharField(max_length=400)
     subtitle = models.CharField(max_length=400, blank=True, null=True)
     headline = models.CharField(max_length=400, blank=True, null=True)
-    shadow_text = models.CharField(max_length=300, blank=True, null=True)
+    shadowText = models.CharField(max_length=300, blank=True, null=True)
     content = models.TextField()
     excerpt = models.TextField(blank=True, null=True)
     published = models.DateTimeField(editable=False, default=timezone.now)
@@ -109,15 +90,9 @@ class Post(AutoSlugMixin):
     dislikes = models.IntegerField(default=0)
     featured_image = models.ImageField(
         upload_to='featured_images/%Y/%m/%d/', blank=True, null=True)
-    post_image_1 = models.ImageField(
-        upload_to='post_images/%Y/%m/%d/', blank=True, null=True)
-    post_image_2 = models.ImageField(
-        upload_to='post_images/%Y/%m/%d/', blank=True, null=True)
-    post_image_3 = models.ImageField(
-        upload_to='post_images/%Y/%m/%d/', blank=True, null=True)
     updated = models.DateTimeField(default=timezone.now)
     status = models.CharField(
-        max_length=50, choices=STATUS_CHOICES, default='draft')
+        max_length=50, choices=POST_STATUS, default='draft')
 
     # SEO
     seo_title = models.CharField(max_length=400, blank=True, null=True)
