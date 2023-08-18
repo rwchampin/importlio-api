@@ -3,7 +3,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelatio
 from django.contrib.contenttypes.models import ContentType
 from django.utils.text import slugify
 from django.utils import timezone
-
+import uuid
 from users.models import UserAccount as Users
 import readtime
 
@@ -13,10 +13,17 @@ POST_STATUS = (
 )
 
 class AutoSlugMixin(models.Model):
-    slug = models.SlugField(unique=True, blank=True)
+    slug = models.SlugField(blank=True, null=True, max_length=400)
 
     def save(self, *args, **kwargs):
-        if not self.slug:
+        # If the post doesn't have a slug or has a temporary slug, generate a new one
+        if not self.slug or self.slug.startswith('temp-slug-'):
+            if self.title:
+                self.slug = slugify(self.get_slug_source())
+            else:
+                self.slug = f'temp-slug-{uuid4()}'
+        # If the post has a title and the slug doesn't start with 'temp-slug-', update the slug
+        elif self.title and not self.slug.startswith('temp-slug-'):
             self.slug = slugify(self.get_slug_source())
         super().save(*args, **kwargs)
 
@@ -75,11 +82,11 @@ class Post(AutoSlugMixin):
     # author = models.ForeignKey(User, on_delete=models.CASCADE)
     post_type = models.ForeignKey(
         PostType, on_delete=models.CASCADE, blank=True, null=True)
-    title = models.CharField(max_length=400)
+    title = models.CharField(max_length=400, blank=True, null=True)
     subtitle = models.CharField(max_length=400, blank=True, null=True)
     headline = models.CharField(max_length=400, blank=True, null=True)
     shadowText = models.CharField(max_length=300, blank=True, null=True)
-    content = models.TextField()
+    content = models.TextField(null=True, blank=True)
     excerpt = models.TextField(blank=True, null=True)
     published = models.DateTimeField(editable=False, default=timezone.now)
     categories = models.ManyToManyField(Category, blank=True)
@@ -92,7 +99,7 @@ class Post(AutoSlugMixin):
         upload_to='featured_images/%Y/%m/%d/', blank=True, null=True)
     updated = models.DateTimeField(default=timezone.now)
     status = models.CharField(
-        max_length=50, choices=POST_STATUS, default='draft')
+        max_length=50, choices=POST_STATUS, default='draft', blank=True, null=True)
 
     # SEO
     seo_title = models.CharField(max_length=400, blank=True, null=True)

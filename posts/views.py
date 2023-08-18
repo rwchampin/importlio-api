@@ -23,6 +23,12 @@ class PostCreateAPIView(CreateAPIView):
     # parser_classes = [MultiPartParser, FormParser]
     
     def create(self, request, *args, **kwargs):
+        # If no data is provided, create a blank post
+        if not request.data:
+            post = Post.objects.create()  # Create a blank post
+            serializer = PostSerializer(post)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
         # Convert base64-encoded image to a file
         featured_image_data = request.data.get('featured_image')
         if featured_image_data:
@@ -36,6 +42,7 @@ class PostCreateAPIView(CreateAPIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+ 
     
 class RecentPostListView(generics.ListAPIView):
     queryset = Post.objects.all()[:4]
