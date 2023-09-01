@@ -16,36 +16,29 @@ from os import getenv, path
 from pathlib import Path
 from django.core.management.utils import get_random_secret_key
 import dotenv
-#this is wrong
-# import dotenv
-
-#this lib is required for the dotenv to work
-
-
-
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-dotenv_file = BASE_DIR / ".env.local"
+dotenv_file = BASE_DIR / '.env.local'
 
 if path.isfile(dotenv_file):
     dotenv.load_dotenv(dotenv_file)
 
-DEVELOPMENT_MODE = getenv("DEVELOPMENT_MODE", "False") == "True"
+DEVELOPMENT_MODE = getenv('DEVELOPMENT_MODE', 'False') == 'True'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = getenv("DJANGO_SECRET_KEY", get_random_secret_key())
+SECRET_KEY = getenv('DJANGO_SECRET_KEY', get_random_secret_key())
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = getenv("DEBUG", "False") == "True"
+DEBUG = getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
-
+ALLOWED_HOSTS = getenv('DJANGO_ALLOWED_HOSTS',
+                          '127.0.0.1,localhost').split(',')
 
 # Application definition
 
@@ -219,6 +212,11 @@ DJOSER = {
     "PASSWORD_RESET_CONFIRM_RETYPE": True,
     "TOKEN_MODEL": None,
     "SOCIAL_AUTH_ALLOWED_REDIRECT_URIS": getenv("REDIRECT_URLS").split(","),
+    "SERIALIZERS": {
+        'user': 'users.serializers.CustomCurrentUserSerializer',
+        'current_user': 'users.serializers.CustomCurrentUserSerializer',
+        
+    }
 }
 
 AUTH_COOKIE = "access"
@@ -233,7 +231,6 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = getenv("GOOGLE_AUTH_SECRET_KEY")
 SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = [
     "https://www.googleapis.com/auth/userinfo.email",
     "https://www.googleapis.com/auth/userinfo.profile",
-    "https://www.googleapis.com/auth/userinfo.profile",
     "openid",
 ]
 SOCIAL_AUTH_GOOGLE_OAUTH2_EXTRA_DATA = ["first_name", "last_name"]
@@ -245,9 +242,10 @@ SOCIAL_AUTH_FACEBOOK_PROFILE_EXTRA_PARAMS = {"fields": "email, first_name, last_
 
 CORS_ALLOWED_ORIGINS = getenv(
     "CORS_ALLOWED_ORIGINS",
-    "https://www.api.importlio.com,http://www.api.importlio.com,http://localhost:8000,http://127.0.0.1:8000,http://localhost:3000,http://127.0.0.1:3000,https://importlio.com,https://www.importlio.com,https://api.importlio.com,https://api.importlio.com",
+    "https://www.api.importlio.com,http://www.api.importlio.com,http://localhost:8000,http://127.0.0.1:8000,https://localhost:3000,http://localhost:3000,http://127.0.0.1:3000,https://importlio.com,https://www.importlio.com,https://api.importlio.com,https://api.importlio.com",
 ).split(",")
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = True
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

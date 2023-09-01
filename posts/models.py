@@ -13,23 +13,15 @@ POST_STATUS = (
 )
 
 class AutoSlugMixin(models.Model):
-    slug = models.SlugField(blank=True, null=True, max_length=400)
+    slug = models.SlugField(unique=True, blank=True)
 
     def save(self, *args, **kwargs):
-        # If the post doesn't have a slug or has a temporary slug, generate a new one
-        if not self.slug or self.slug.startswith('temp-slug-'):
-            if self.title:
-                self.slug = slugify(self.get_slug_source())
-            else:
-                self.slug = f'temp-slug-{uuid4()}'
-        # If the post has a title and the slug doesn't start with 'temp-slug-', update the slug
-        elif self.title and not self.slug.startswith('temp-slug-'):
+        if not self.slug:
             self.slug = slugify(self.get_slug_source())
         super().save(*args, **kwargs)
 
     def get_slug_source(self):
-        raise NotImplementedError(
-            "Subclasses of AutoSlugMixin must provide a get_slug_source() method.")
+        raise NotImplementedError("Subclasses of AutoSlugMixin must provide a get_slug_source() method.")
 
     class Meta:
         abstract = True
@@ -64,7 +56,15 @@ class PostType(AutoSlugMixin):
     def __str__(self):
         return self.name
 
+class PostStatus(AutoSlugMixin):
+    name = models.CharField(max_length=100)
 
+    def get_slug_source(self):
+        return self.name
+
+    def __str__(self):
+        return self.name
+    
 class Field(models.Model):
     post_type = models.ForeignKey(PostType, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
@@ -98,9 +98,7 @@ class Post(AutoSlugMixin):
     featured_image = models.ImageField(
         upload_to='featured_images/%Y/%m/%d/', blank=True, null=True)
     updated = models.DateTimeField(default=timezone.now)
-    status = models.CharField(
-        max_length=50, choices=POST_STATUS, default='draft', blank=True, null=True)
-
+    status = models.ManyToManyField(PostStatus, blank=True, default='draft')
     # SEO
     seo_title = models.CharField(max_length=400, blank=True, null=True)
     seo_description = models.TextField(blank=True, null=True)

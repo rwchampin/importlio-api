@@ -9,7 +9,13 @@ from .views import (
     PostsByPostTypeView,
     TagListView,
     CategoryListView,
-    PostTypeListView
+    PostTypeListView,
+    PostsByDateView,
+    PostsByDateRangeView,
+    PostsByMonthView,
+    PostsByYearView,
+    PostsDraftListView,
+    PostUpdateAPIView,
 )
 
 urlpatterns = [
@@ -28,6 +34,18 @@ urlpatterns = [
     path('posts/tags/<slug:slug>/', PostsByTagView.as_view(), name='posts-by-tag'),
     path('posts/categories/<slug:slug>/', PostsByCategoryView.as_view(), name='posts-by-category'),
     path('posts/post-types/<slug:slug>/', PostsByPostTypeView.as_view(), name='posts-by-post-type'),
+    
+    path('posts/date/<int:year>/<int:month>/<int:day>/', PostsByDateView.as_view(), name='posts-by-date'),
+    
+    path('posts/date-range/<int:start_year>/<int:start_month>/<int:start_day>/<int:end_year>/<int:end_month>/<int:end_day>/', PostsByDateRangeView.as_view(), name='posts-by-date-range'),
+    
+    path('posts/month/<int:year>/<int:month>/', PostsByMonthView.as_view(), name='posts-by-month'),
+    
+    path('posts/year/<int:year>/', PostsByYearView.as_view(), name='posts-by-year'),
+    
+    path('posts/status/drafts/', PostsDraftListView.as_view(), name='posts-draft-list'),
+    path('posts/<int:pk>/update/', PostUpdateAPIView.as_view(), name='post-update'),
+
 ]
 
 

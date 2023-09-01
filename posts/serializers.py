@@ -1,6 +1,5 @@
 from rest_framework import serializers
-from .models import Post, PostImage, CustomFieldValue, Tag, Category,PostType
-from users.models import UserAccount
+from .models import Post, Tag, Category,PostType
 from django.core.files.base import ContentFile
 import base64
 
@@ -43,7 +42,6 @@ class PostSerializer(serializers.ModelSerializer):
         model = Post
         fields = ( 'id','status', 'title', 'slug', 'content', 'post_type','published','updated','headline', 'subtitle', 'shadowText', 'excerpt', 'seo_title', 'seo_description',
                   'categories', 'tags', 'readtime', 'likes', 'dislikes', 'featured_image')
-        
     def get_post_type(self, obj):
         return obj.post_type.name if obj.post_type else None
     
@@ -58,3 +56,5 @@ class RecentPostSerializer(serializers.ModelSerializer):
         model = Post
         fields = ('title', 'slug', 'content', 'published', 'updated', 'post_type',
                   'categories', 'tags', 'readtime', 'likes', 'dislikes', 'featured_image')
+
+ 
