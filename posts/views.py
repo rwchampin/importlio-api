@@ -1,6 +1,6 @@
 from rest_framework import generics, status
-from .models import Post, Tag, Category, PostType
-from .serializers import PostSerializer, RecentPostSerializer, TagSerializer, CategoryValueSerializer, PostTypeSerializer
+from .models import Post, Tag, Category, PostType, PostStatus
+from .serializers import PostSerializer, RecentPostSerializer, TagSerializer, CategoryValueSerializer, PostTypeSerializer, PostStatusSerializer
 from rest_framework.permissions import AllowAny
 from rest_framework.generics import RetrieveAPIView, ListAPIView, CreateAPIView
 from rest_framework.response import Response
@@ -12,6 +12,23 @@ import datetime
 from django.db.models import Q
 from slugify import slugify
 
+# simple view for posts that will create a blank post if no data is provided
+class SimplePostCreateAPIView(CreateAPIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+    # parser_classes = [MultiPartParser, FormParser]
+    
+    def create(self, request, *args, **kwargs):
+        # If no data is provided, create a blank post
+        if not request.data:
+            num_drafts = Post.objects.all().count() + 1
+            title = f'Untitled Post {num_drafts}'
+            new_post = Post.objects.create(title=title, slug=slugify(title))
+            serializer = PostSerializer(new_post)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response({"detail": "No data provided."}, status=status.HTTP_400_BAD_REQUEST)
+        
 class PostListView(generics.ListAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
@@ -27,7 +44,7 @@ class PostCreateAPIView(CreateAPIView):
     def create(self, request, *args, **kwargs):
         # If no data is provided, create a blank post
         if not request.data:
-            num_drafts = Post.objects.filter(status='Draft').count() + 1
+            num_drafts = Post.objects.all().count() + 1
             title = f'Untitled Post {num_drafts}'
             new_post = Post.objects.create(title=title, slug=slugify(title))
             serializer = PostSerializer(new_post)
@@ -69,7 +86,7 @@ class PostUpdateAPIView(generics.UpdateAPIView):
     
 class RecentPostListView(generics.ListAPIView):
     # get the most recent 3 posts ith a status of published
-    queryset = Post.objects.filter(status__name="published").order_by('-updated')[:3]
+    queryset = Post.objects.all().order_by('-updated')[:3]
     serializer_class = RecentPostSerializer
     permission_classes = [AllowAny]
     authentication_classes = []
@@ -156,7 +173,13 @@ class PostTypeListView(generics.ListAPIView):
     permission_classes = [AllowAny]
     authentication_classes = []
     lookup_field='name'
-    
+ 
+class PostStatusListView(generics.ListAPIView):
+    queryset = PostStatus.objects.all()
+    serializer_class = PostStatusSerializer
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    lookup_field='name'   
     
 class PostsByDateView(generics.ListAPIView):
     serializer_class = PostSerializer
@@ -239,3 +262,84 @@ class PostUpdateAPIView(generics.UpdateAPIView):
         self.perform_update(serializer)
         return Response(serializer.data)
      
+
+class PostDeleteAPIView(generics.DestroyAPIView):
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer
+    permission_classes = [AllowAny]  # Update permissions as needed
+    lookup_field = 'pk'
+    
+    
+def create_initial_post_data():
+    # check if initial post data has already been created or create it
+    categories = Category.objects.all()
+    tags = Tag.objects.all()
+    post_types = PostType.objects.all()
+    
+    if categories and tags and post_types:
+        pass
+    else:
+        blogCategories = [
+            "Dropshipping Strategies",
+            "E-commerce Tips",
+            "Shopify Store Optimization",
+            "Amazon Product Importing",
+            "Product Sourcing Techniques",
+            "Online Business Growth",
+            "Shopify App Guides",
+            "E-commerce Marketing",
+            "SEO for E-commerce",
+            "Business Automation"
+        ]
+        
+        blogTags = [
+            "Dropshipping Success",
+            "Amazon Product Importer",
+            "E-commerce Trends",
+            "Shopify Apps",
+            "Product Sourcing",
+            "E-commerce SEO",
+            "Online Store Tips",
+            "Business Growth Strategies",
+            "Shopify Store Setup",
+            "E-commerce Marketing"
+        ]
+        
+        postTypes = [
+            "How-to Guides",
+            "Tips and Tricks",
+            "Case Studies",
+            "Product Spotlights",
+            "Industry News",
+            "Success Stories",
+            "Expert Interviews",
+            "App Feature Updates",
+            "E-commerce Insights",
+            "Step-by-Step Tutorials"
+        ]
+        # Create initial post types
+        for post_type in postTypes:
+            PostType.objects.create(name=post_type)
+            
+        # Create initial categories
+        for category in blogCategories:
+            Category.objects.create(name=category)
+            
+        # Create initial tags
+        for tag in blogTags:
+            Tag.objects.create(name=tag)
+
+        
+# create_initial_post_data() 
+def createPostStatusTypes():
+    postStatusTypes = [
+        "Draft",
+        "Published",
+        "Scheduled",
+        "Archived",
+        "Deleted"
+    ]
+    for postStatusType in postStatusTypes:
+        PostStatus.objects.create(name=postStatusType)
+    
+# createPostStatusTypes()

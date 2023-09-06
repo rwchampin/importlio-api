@@ -13,4 +13,4 @@ class RegistrantSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Registrant
-        fields = ['id', 'email']
+        fields = '__all__'

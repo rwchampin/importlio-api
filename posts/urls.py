@@ -16,6 +16,9 @@ from .views import (
     PostsByYearView,
     PostsDraftListView,
     PostUpdateAPIView,
+    SimplePostCreateAPIView,
+    PostDeleteAPIView,
+    PostStatusListView,
 )
 
 urlpatterns = [
@@ -29,7 +32,7 @@ urlpatterns = [
     path('posts/tags/list/', TagListView.as_view(), name='tag-list'),
     path('posts/categories/list/', CategoryListView.as_view(), name='category-list'),
     path('posts/post-types/list/', PostTypeListView.as_view(), name='post-type-list'),
-    
+    path('posts/post-status/list/', PostStatusListView.as_view(), name='post-status-list'),
     # Endpoints for retrieving posts by tag and category
     path('posts/tags/<slug:slug>/', PostsByTagView.as_view(), name='posts-by-tag'),
     path('posts/categories/<slug:slug>/', PostsByCategoryView.as_view(), name='posts-by-category'),
@@ -46,6 +49,10 @@ urlpatterns = [
     path('posts/status/drafts/', PostsDraftListView.as_view(), name='posts-draft-list'),
     path('posts/<int:pk>/update/', PostUpdateAPIView.as_view(), name='post-update'),
 
+    path('posts/simple/create/', SimplePostCreateAPIView.as_view(), name='simple-post-create'),
+    
+    path('posts/<int:pk>/delete/', PostDeleteAPIView.as_view(), name='post-delete'),
+    
 ]
 
 

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Post, Tag, Category,PostType
+from .models import Post, Tag, Category,PostType, PostStatus
 from django.core.files.base import ContentFile
 import base64
 
@@ -21,6 +21,11 @@ class PostTypeSerializer(serializers.ModelSerializer):
         model = PostType
         fields = '__all__'
 
+class PostStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PostStatus
+        fields = '__all__'
+        
 class Base64ImageField(serializers.ImageField):
     def to_internal_value(self, data):
         if isinstance(data, str) and data.startswith('data:image'):
@@ -35,17 +40,20 @@ class PostSerializer(serializers.ModelSerializer):
     featured_image = Base64ImageField(required=False)
     tags = TagSerializer(many=True, read_only=True)
     categories = CategoryValueSerializer(many=True, read_only=True)
-
+    post_type = PostTypeSerializer(read_only=True)
+    post_status = PostStatusSerializer(read_only=True)
+    
     lookup_field = 'slug'
     pagination_class = []
     class Meta:
         model = Post
-        fields = ( 'id','status', 'title', 'slug', 'content', 'post_type','published','updated','headline', 'subtitle', 'shadowText', 'excerpt', 'seo_title', 'seo_description',
+        fields = ( 'id', 'post_status', 'title', 'slug', 'content', 'post_type','published','updated','headline', 'subtitle', 'shadowText', 'excerpt', 'seo_title', 'seo_description',
                   'categories', 'tags', 'readtime', 'likes', 'dislikes', 'featured_image')
     def get_post_type(self, obj):
         return obj.post_type.name if obj.post_type else None
     
 class RecentPostSerializer(serializers.ModelSerializer):
+    queryset = Post.objects.filter(post_status__name="Draft").order_by('-published')[:3]
     categories = CategoryValueSerializer(many=True, read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     published = serializers.DateTimeField(format="%m-%d-%Y")

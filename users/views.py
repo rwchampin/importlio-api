@@ -6,9 +6,10 @@ from djoser.social.views import ProviderAuthView
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
-    TokenVerifyView
+    TokenVerifyView,
 )
-
+from .models import UserAccount
+from .serializers import CustomCurrentUserSerializer
 
 
 class CustomProviderAuthView(ProviderAuthView):
@@ -37,7 +38,12 @@ class CustomProviderAuthView(ProviderAuthView):
                 httponly=settings.AUTH_COOKIE_HTTP_ONLY,
                 samesite=settings.AUTH_COOKIE_SAMESITE
             )
-
+            
+            if access_token is not None and refresh_token is not None:
+                email = request.data.get('email')
+                user = UserAccount.objects.get(email=email)
+                serializer = CustomCurrentUserSerializer(user)
+                response.data['user'] = serializer.data
         return response
 
 
@@ -68,8 +74,23 @@ class CustomTokenObtainPairView(TokenObtainPairView):
                 samesite=settings.AUTH_COOKIE_SAMESITE
             )
 
+            if access_token is not None and refresh_token is not None:
+                email = request.data.get('email')
+                user = UserAccount.objects.get(email=email)
+                serializer = CustomCurrentUserSerializer(user)
+                response.data['user'] = serializer.data
             # get user information from model and send back on login
-
+            # user = self.get_user()
+            # response.data['user'] = {
+            #     'id': user.id,
+            #     'email': user.email,
+            #     'first_name': user.first_name,
+            #     'last_name': user.last_name,
+            #     'avatar': user.avatar,
+            #     'is_active': user.is_active,
+            #     'is_staff': user.is_staff,
+            #     'is_superuser': user.is_superuser,
+            # }
         return response
 
 
@@ -105,7 +126,13 @@ class CustomTokenVerifyView(TokenVerifyView):
         if access_token:
             request.data['token'] = access_token
 
-        return super().post(request, *args, **kwargs)
+        response =  super().post(request, *args, **kwargs)
+        
+        if response.status_code == 200:
+            email = request.data.get('email')
+            user = UserAccount.objects.get(email=email)
+            serializer = CustomCurrentUserSerializer(user)
+            response.data['user'] = serializer.data
 
 
 class LogoutView(APIView):

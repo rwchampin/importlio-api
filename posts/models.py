@@ -13,7 +13,7 @@ POST_STATUS = (
 )
 
 class AutoSlugMixin(models.Model):
-    slug = models.SlugField(unique=True, blank=True)
+    slug = models.SlugField(unique=True, blank=True, null=True)
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -77,7 +77,12 @@ class Field(models.Model):
     def __str__(self):
         return self.name
 
+class PostStatus(models.Model):
+    name = models.CharField(max_length=100)
 
+    def __str__(self):
+        return self.name
+    
 class Post(AutoSlugMixin):
     # author = models.ForeignKey(User, on_delete=models.CASCADE)
     post_type = models.ForeignKey(
@@ -98,8 +103,7 @@ class Post(AutoSlugMixin):
     featured_image = models.ImageField(
         upload_to='featured_images/%Y/%m/%d/', blank=True, null=True)
     updated = models.DateTimeField(default=timezone.now)
-    status = models.ManyToManyField(PostStatus, blank=True, default='draft')
-    # SEO
+    post_status = models.ForeignKey(PostStatus, on_delete=models.CASCADE, blank=True, null=True, default=1)
     seo_title = models.CharField(max_length=400, blank=True, null=True)
     seo_description = models.TextField(blank=True, null=True)
 
@@ -117,7 +121,9 @@ class Post(AutoSlugMixin):
             self.updated = timezone.now()
         if not self.slug:
             self.slug = slugify(self.get_slug_source())
-
+        if self.title:
+            self.slug = slugify(self.title)
+            
         self.readtime = self.get_readtime()
         super().save(*args, **kwargs)
 
