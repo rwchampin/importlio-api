@@ -99,24 +99,34 @@ WSGI_APPLICATION = "importlio.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-if DEVELOPMENT_MODE is True:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.mysql",
-            "HOST": "importlio-development.cmscwzzyarwo.us-east-1.rds.amazonaws.com",
-            "PORT": "3306",
-            "NAME": "importlio_development",
-            "USER": "rwchampin",
-            "PASSWORD": "BlackMagic0214$",
-        }
-    }
-elif len(sys.argv) > 0 and sys.argv[1] != "collectstatic":
-    if getenv("DATABASE_URL", None) is None:
-        raise Exception("DATABASE_URL environment variable not defined")
-    DATABASES = {
-        "default": dj_database_url.parse(getenv("DATABASE_URL")),
-    }
+# if DEVELOPMENT_MODE is True:
+#     DATABASES = {
+#         "default": {
+#             "ENGINE": "django.db.backends.mysql",
+#             "HOST": "importlio-development.cmscwzzyarwo.us-east-1.rds.amazonaws.com",
+#             "PORT": "3306",
+#             "NAME": "importlio_development",
+#             "USER": "rwchampin",
+#             "PASSWORD": "BlackMagic0214$",
+#         }
+#     }
+# elif len(sys.argv) > 0 and sys.argv[1] != "collectstatic":
+#     if getenv("DATABASE_URL", None) is None:
+#         raise Exception("DATABASE_URL environment variable not defined")
+#     DATABASES = {
+#         "default": dj_database_url.parse(getenv("DATABASE_URL")),
+#     }
 
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.mysql",
+        "HOST": "importlio-development.cmscwzzyarwo.us-east-1.rds.amazonaws.com",
+        "PORT": "3306",
+        "NAME": "importlio_development",
+        "USER": "rwchampin",
+        "PASSWORD": "BlackMagic0214$",
+    }
+}
 # Email settings
 
 EMAIL_BACKEND = "django_ses.SESBackend"
