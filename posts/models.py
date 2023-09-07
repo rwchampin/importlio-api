@@ -13,11 +13,12 @@ POST_STATUS = (
 )
 
 class AutoSlugMixin(models.Model):
-    slug = models.SlugField(unique=True, blank=True, null=True)
+    slug = models.SlugField(unique=True, blank=True, null=True, max_length=255)
 
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.get_slug_source())
+
         super().save(*args, **kwargs)
 
     def get_slug_source(self):

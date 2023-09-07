@@ -35,7 +35,6 @@ class Base64ImageField(serializers.ImageField):
         return super().to_internal_value(data)
     
 class PostSerializer(serializers.ModelSerializer):
-    published = serializers.DateTimeField(format="%m-%d-%Y", required=False)
     updated = serializers.DateTimeField(format="%m-%d-%Y", required=False)
     featured_image = Base64ImageField(required=False)
     tags = TagSerializer(many=True, read_only=True)
@@ -47,7 +46,7 @@ class PostSerializer(serializers.ModelSerializer):
     pagination_class = []
     class Meta:
         model = Post
-        fields = ( 'id', 'post_status', 'title', 'slug', 'content', 'post_type','published','updated','headline', 'subtitle', 'shadowText', 'excerpt', 'seo_title', 'seo_description',
+        fields = ( 'id', 'post_status', 'title', 'slug', 'content', 'post_type','updated','headline', 'subtitle', 'shadowText', 'excerpt', 'seo_title', 'seo_description',
                   'categories', 'tags', 'readtime', 'likes', 'dislikes', 'featured_image')
     def get_post_type(self, obj):
         return obj.post_type.name if obj.post_type else None
@@ -56,13 +55,13 @@ class RecentPostSerializer(serializers.ModelSerializer):
     queryset = Post.objects.filter(post_status__name="Draft").order_by('-published')[:3]
     categories = CategoryValueSerializer(many=True, read_only=True)
     tags = TagSerializer(many=True, read_only=True)
-    published = serializers.DateTimeField(format="%m-%d-%Y")
     updated = serializers.DateTimeField(format="%m-%d-%Y")
+    post_type = PostTypeSerializer(read_only=True)
 
 
     class Meta:
         model = Post
-        fields = ('title', 'slug', 'content', 'published', 'updated', 'post_type',
+        fields = ('title', 'slug', 'content', 'updated', 'post_type',
                   'categories', 'tags', 'readtime', 'likes', 'dislikes', 'featured_image')
 
  
