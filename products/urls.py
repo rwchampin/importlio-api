@@ -1,20 +1,7 @@
-from django.urls import path
-from .views import ProductViewSet
-
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from . import views
+from .views import ScrapeAmazonViewSet
 urlpatterns = [
-    path(
-        "products/single/",
-        ProductViewSet.as_view({"get": "scrape_product_page"}),
-        name="scrape-single-product",
-    ),
-    path(
-        "products/multiple/",
-        ProductViewSet.as_view({"post": "scrape_multiple_products"}),
-        name="scrape-multiple-products",
-    ),
-    path(
-        "products/results/",
-        ProductViewSet.as_view({"get": "scrape_results_page"}),
-        name="scrape-results-page",
-    ),
+     path('amazon/scrape-url/', ScrapeAmazonViewSet.as_view({ 'post': 'create' }), name='scrape-amazon-url'),
 ]

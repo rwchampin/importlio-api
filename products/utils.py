@@ -144,3 +144,41 @@ def get_availability(soup):
         available = ""
 
     return available
+
+
+ 
+
+def extract_product_info(html):
+    # Parse the HTML using BeautifulSoup
+    soup = BeautifulSoup(html, 'html.parser')
+    
+    # Find all HTML sections with the specified attributes
+    product_sections = soup.find_all('div', {'data-asin': True, 'data-index': True, 'data-uuid': True, 'data-component-type': 's-search-result'})
+    
+    # Initialize an empty list to store product information
+    product_info_list = []
+    
+    for section in product_sections:
+        # Extract the title
+        title_element = section.find('h2', class_='a-size-mini')
+        title = title_element.text.strip() if title_element else None
+        
+        # Extract the price
+        price_element = section.find('span', class_='a-offscreen')
+        price = price_element.text.strip() if price_element else None
+        
+        # Extract the image URL
+        image_element = section.find('img', {'data-image-latency': 's-product-image'})
+        image_url = image_element.get('src') if image_element else None
+        
+        # Create a dictionary for the product information
+        product_info = {
+            'title': title,
+            'price': price,
+            'image_url': image_url
+        }
+        
+        # Add the product information to the list
+        product_info_list.append(product_info)
+    
+    return product_info_list
