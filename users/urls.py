@@ -4,8 +4,14 @@ from .views import (
     CustomTokenObtainPairView,
     CustomTokenRefreshView,
     CustomTokenVerifyView,
-    LogoutView
+    LogoutView,
+    UserAccountViewSet
 )
+from rest_framework import routers
+from django.conf.urls import include
+
+router = routers.DefaultRouter()
+router.register(r'users', UserAccountViewSet)
 
 urlpatterns = [
     re_path(
@@ -17,4 +23,7 @@ urlpatterns = [
     path('jwt/refresh/', CustomTokenRefreshView.as_view()),
     path('jwt/verify/', CustomTokenVerifyView.as_view()),
     path('logout/', LogoutView.as_view()),
+    
+    path('auth/', include(router.urls)),
+    
 ]

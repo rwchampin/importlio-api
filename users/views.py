@@ -1,5 +1,8 @@
 from django.conf import settings
-from rest_framework.views import APIView
+from rest_framework.views import APIView, Response, status
+from rest_framework.generics import ListAPIView, CreateAPIView, RetrieveAPIView, UpdateAPIView, DestroyAPIView
+from rest_framework import viewsets
+
 from rest_framework.response import Response
 from rest_framework import status
 from djoser.social.views import ProviderAuthView
@@ -8,12 +11,14 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
     TokenVerifyView
 )
-
+from .models import UserAccount
+from rest_framework.permissions import AllowAny
+from .serializers import UserAccountSerializer
 
 class CustomProviderAuthView(ProviderAuthView):
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
-
+        import pdb; pdb.set_trace()
         if response.status_code == 201:
             access_token = response.data.get('access')
             refresh_token = response.data.get('refresh')
@@ -43,11 +48,11 @@ class CustomProviderAuthView(ProviderAuthView):
 class CustomTokenObtainPairView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
-
+        import pdb; pdb.set_trace()
         if response.status_code == 200:
             access_token = response.data.get('access')
             refresh_token = response.data.get('refresh')
-
+            import pdb; pdb.set_trace()
             response.set_cookie(
                 'access',
                 access_token,
@@ -112,3 +117,7 @@ class LogoutView(APIView):
         response.delete_cookie('refresh')
 
         return response
+
+class UserAccountViewSet(viewsets.ModelViewSet):
+    queryset = UserAccount.objects.all()
+    serializer_class = UserAccountSerializer

@@ -198,10 +198,9 @@ REST_FRAMEWORK = {
         "users.authentication.CustomJWTAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.IsAuthenticated",
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10,  # Set the number of items per page
+    'PAGE_SIZE': 20,  # Set the number of items per page
 }
 
 DJOSER = {
@@ -212,16 +211,16 @@ DJOSER = {
     "PASSWORD_RESET_CONFIRM_RETYPE": True,
     "TOKEN_MODEL": None,
     "SOCIAL_AUTH_ALLOWED_REDIRECT_URIS": getenv("REDIRECT_URLS").split(","),
-    "SERIALIZERS": {
-        'user': 'users.serializers.CustomCurrentUserSerializer',
-        'current_user': 'users.serializers.CustomCurrentUserSerializer',
-        'user_create': 'users.serializers.CustomTokenObtainPairView',
-    }
+    # "SERIALIZERS": {
+    #     'user': 'users.serializers.UserAccountSerializer',
+    #     'current_user': 'users.serializers.UserAccountSerializer',
+    #     'user_create': 'users.serializers.CustomTokenObtainPairView',
+    # }
 }
 
 AUTH_COOKIE = "access"
 AUTH_COOKIE_MAX_AGE = 60 * 60 * 24
-AUTH_COOKIE_SECURE = getenv("AUTH_COOKIE_SECURE", "True") == "True"
+AUTH_COOKIE_SECURE = False #getenv("AUTH_COOKIE_SECURE", "True") == "True"
 AUTH_COOKIE_HTTP_ONLY = True
 AUTH_COOKIE_PATH = "/"
 AUTH_COOKIE_SAMESITE = "None"
