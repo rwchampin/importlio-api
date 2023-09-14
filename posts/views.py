@@ -1,52 +1,102 @@
-from rest_framework import generics, status
+from rest_framework import status
 from .models import Post, Tag, Category, PostType, PostStatus
-from .serializers import PostSerializer, RecentPostSerializer, TagSerializer, CategoryValueSerializer, PostTypeSerializer, PostStatusSerializer
-from rest_framework.permissions import AllowAny
-from rest_framework.generics import RetrieveAPIView, ListAPIView, CreateAPIView
+from .serializers import PostSerializer, RecentPostSerializer, TagSerializer, CategoryValueSerializer, PostTypeSerializer, PostStatusSerializer, PostUpdateSerializer, PostCreateSerializer
+from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.generics import RetrieveAPIView, ListAPIView, CreateAPIView, UpdateAPIView, DestroyAPIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.pagination import PageNumberPagination
+
+# from rest_framework.pagination import PageNumberPagination
 from django.core.files.base import ContentFile
 import base64
-import datetime
-from django.db.models import Q
+# import datetime
+# from django.db.models import Q
 from slugify import slugify
 
-# simple view for posts that will create a blank post if no data is provided
-class SimplePostCreateAPIView(CreateAPIView):
+
+class PostCreateView(CreateAPIView):
     authentication_classes = []
-    permission_classes = [AllowAny]
-    # parser_classes = [MultiPartParser, FormParser]
+    permission_classes = [IsAdminUser]
     
-    def create(self, request, *args, **kwargs):
-        # If no data is provided, create a blank post
-        if not request.data:
-            num_drafts = Post.objects.all().count() + 1
-            title = f'Untitled Post {num_drafts}'
-            new_post = Post.objects.create(title=title, slug=slugify(title))
-            serializer = PostSerializer(new_post)
+    def get_queryset(self):
+        return Post.objects.all()
+    
+    def post(self, request, *args, **kwargs):
+        # Convert base64-encoded image to a file
+        featured_image_data = request.data.get('featured_image')
+        if featured_image_data:
+            image_format, image_data = featured_image_data.split(';base64,')
+            image_extension = image_format.split('/')[-1]
+            featured_image = ContentFile(base64.b64decode(image_data), name=f'featured_image.{image_extension}')
+            request.data['featured_image'] = featured_image
+
+        serializer = PostCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response({"detail": "No data provided."}, status=status.HTTP_400_BAD_REQUEST)
-        
-class PostListView(generics.ListAPIView):
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class PostListView(ListAPIView):
+    serializer_class = PostSerializer
+    permission_classes = [AllowAny]
+    lookup_field = 'slug'
+    
+    def get_queryset(self):
+        return Post.objects.all()
+    
+# simple view for posts that will create a blank post if no data is provided 
+class PostDetailView(RetrieveAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = [AllowAny]
-    authentication_classes = []
-    pagination_class = PageNumberPagination
+    lookup_field = 'slug'
 
-class PostCreateAPIView(CreateAPIView):
-    authentication_classes = []
+class PostUpdateAPIView(UpdateAPIView):
+    queryset = Post.objects.all()
+    serializer_class = PostUpdateSerializer
     permission_classes = [AllowAny]
-    # parser_classes = [MultiPartParser, FormParser]
-    
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        
+        # Get the existing title and new title from the request data
+        existing_title = instance.title
+        new_title = request.data.get('title', existing_title)
+        
+        # Check if the title has changed
+        if existing_title != new_title:
+            instance.title = new_title
+            instance.slug = slugify(new_title)  # Update the slug if the title has changed
+        
+        # Convert base64-encoded image to a file
+        featured_image_data = request.data.get('featured_image')
+        if featured_image_data:
+            image_format, image_data = featured_image_data.split(';base64,')
+            image_extension = image_format.split('/')[-1]
+            featured_image = ContentFile(base64.b64decode(image_data), name=f'featured_image.{image_extension}')
+            request.data['featured_image'] = featured_image
+        
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
+
+
+class PostDeleteAPIView(DestroyAPIView):
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer
+    permission_classes = [AllowAny]
+
+class BlankPostCreateAPIView(CreateAPIView):
+    authentication_classes = []
+    permission_classes = [IsAdminUser]
+
     def create(self, request, *args, **kwargs):
         # If no data is provided, create a blank post
         if not request.data:
             num_drafts = Post.objects.all().count() + 1
             title = f'Untitled Post {num_drafts}'
-            new_post = Post.objects.create(title=title, slug=slugify(title))
+            new_post = Post.objects.create(title=title, slug=slugify(title), post_status_id=1, content='')
             serializer = PostSerializer(new_post)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -63,57 +113,19 @@ class PostCreateAPIView(CreateAPIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
  
     
-class PostUpdateAPIView(generics.UpdateAPIView):
-    queryset = Post.objects.all()
-    serializer_class = PostSerializer
-    permission_classes = [AllowAny]  # Update permissions as needed
-
-    def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        # Convert base64-encoded image to a file
-        featured_image_data = request.data.get('featured_image')
-        if featured_image_data:
-            image_format, image_data = featured_image_data.split(';base64,')
-            image_extension = image_format.split('/')[-1]
-            featured_image = ContentFile(base64.b64decode(image_data), name=f'featured_image.{image_extension}')
-            request.data['featured_image'] = featured_image
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        return Response(serializer.data)
+ 
     
-class RecentPostListView(generics.ListAPIView):
+class RecentPostListView(ListAPIView):
     # get the most recent 3 posts ith a status of published
-    queryset = Post.objects.all().order_by('-updated')[:3]
-    serializer_class = RecentPostSerializer
+    queryset = Post.objects.all()[:3]
+    serializer_class = PostSerializer
     permission_classes = [AllowAny]
     authentication_classes = []
 
-class PostDetailView(RetrieveAPIView):
-    queryset = Post.objects.all()
-    serializer_class = PostSerializer
-    permission_classes = [AllowAny]  # Update permissions as needed
-    lookup_field = 'slug'
-    
-    def post(self, request, *args, **kwargs):
-        post = self.get_object()
-        post.likes += 1
-        post.save()
-        serializer = PostSerializer(post)
-        return Response({"post": serializer.data, "likes": post.likes}, status=status.HTTP_200_OK)
-
-    def delete(self, request, *args, **kwargs):
-        post = self.get_object()
-        if post.likes > 0:
-            post.likes -= 1
-            post.save()
-            serializer = PostSerializer(post)
-            return Response({"post": serializer.data, "likes": post.likes}, status=status.HTTP_200_OK)
-        else:
-            return Response({"detail": "No likes to remove.", "likes": post.likes}, status=status.HTTP_400_BAD_REQUEST)
-    
+ 
     
 class PostsByCategoryView(ListAPIView):
     serializer_class = PostSerializer
@@ -155,121 +167,33 @@ class PostsByPostTypeView(ListAPIView):
         else:
             return Post.objects.all()
         
-class TagListView(generics.ListAPIView):
+class TagListView(ListAPIView):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = [AllowAny]
     authentication_classes = []
 
-class CategoryListView(generics.ListAPIView):
+class CategoryListView(ListAPIView):
     queryset = Category.objects.all()
     serializer_class = CategoryValueSerializer
     permission_classes = [AllowAny]
     authentication_classes = []
     
-class PostTypeListView(generics.ListAPIView):
+class PostTypeListView(ListAPIView):
     queryset = PostType.objects.all()
     serializer_class = PostTypeSerializer
     permission_classes = [AllowAny]
     authentication_classes = []
     lookup_field='name'
  
-class PostStatusListView(generics.ListAPIView):
+class PostStatusListView(ListAPIView):
     queryset = PostStatus.objects.all()
     serializer_class = PostStatusSerializer
     permission_classes = [AllowAny]
     authentication_classes = []
-    lookup_field='name'   
-    
-class PostsByDateView(generics.ListAPIView):
-    serializer_class = PostSerializer
-    permission_classes = [AllowAny]
-    authentication_classes = []
-    lookup_field='updated'
-    
-    def get_queryset(self):
-        year = self.kwargs.get('year')
-        month = self.kwargs.get('month')
-        day = self.kwargs.get('day')
-        if year and month and day:
-            return Post.objects.filter(updated__year=year, updated__month=month, updated__day=day)
-        else:
-            return Post.objects.all()
-        
-class PostsByMonthView(generics.ListAPIView):
-    serializer_class = PostSerializer
-    permission_classes = [AllowAny]
-    authentication_classes = []
-    lookup_field='updated'
-    
-    def get_queryset(self):
-        #  if year is none, use current year
-        if year is None:    
-            year = datetime.now().year
-        else:
-            year = self.kwargs.get('year')
-        month = self.kwargs.get('month')
-        if year and month:
-            return Post.objects.filter(updated__year=year, updated__month=month)
-        else:
-            return Post.objects.all()
-        
-class PostsByYearView(generics.ListAPIView):
-    serializer_class = PostSerializer
-    permission_classes = [AllowAny]
-    authentication_classes = []
-    lookup_field='updated'
-    
-    def get_queryset(self):
-        year = self.kwargs.get('year')
-        if year:
-            return Post.objects.filter(updated__year=year)
-        else:
-            return Post.objects.all()
-        
-class PostsByDateRangeView(generics.ListAPIView):
-    serializer_class = PostSerializer
-    permission_classes = [AllowAny]
-    authentication_classes = []
-    lookup_field='updated'
-    
-    def get_queryset(self):
-        start_date = self.kwargs.get('start_date')
-        end_date = self.kwargs.get('end_date')
-        if start_date and end_date:
-            return Post.objects.filter(updated__range=[start_date, end_date])
-        else:
-            return Post.objects.all()
-        
-class PostsDraftListView(generics.ListAPIView):
-    serializer_class = PostSerializer
-    permission_classes = [AllowAny]  # Adjust permissions as needed
-    # get posts with status = draft
-    def get_queryset(self):
-        return Post.objects.filter(status='Draft')
-
-
-class PostUpdateAPIView(generics.UpdateAPIView):
-    queryset = Post.objects.all()
-    serializer_class = PostSerializer
-    permission_classes = [AllowAny]  # Update permissions as needed
-    lookup_field = 'pk'
-
-    def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        return Response(serializer.data)
+    lookup_field='slug'
      
-
-class PostDeleteAPIView(generics.DestroyAPIView):
-    queryset = Post.objects.all()
-    serializer_class = PostSerializer
-    permission_classes = [AllowAny]  # Update permissions as needed
-    lookup_field = 'pk'
-    
-    
+ 
 def create_initial_post_data():
     # check if initial post data has already been created or create it
     categories = Category.objects.all()

@@ -103,11 +103,11 @@ if DEVELOPMENT_MODE is True:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.mysql",
-            "HOST": "importlio-development.cmscwzzyarwo.us-east-1.rds.amazonaws.com",
-            "PORT": "3306",
-            "NAME": "importlio_development",
-            "USER": "rwchampin",
-            "PASSWORD": "BlackMagic0214$",
+            "HOST": "importlio-prod-do-user-14345350-0.b.db.ondigitalocean.com",
+            "PORT": "25060",
+            "NAME": "defaultdb",
+            "USER": "doadmin",
+            "PASSWORD": "AVNS_3snn9HVBKWJlhgExj2g",
         }
     }
 elif len(sys.argv) > 0 and sys.argv[1] != "collectstatic":

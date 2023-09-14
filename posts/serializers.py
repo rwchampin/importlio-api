@@ -12,16 +12,19 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 class CategoryValueSerializer(serializers.ModelSerializer):
+    lookup_field = 'slug'
     class Meta:
         model = Category
         fields = '__all__'
 
 class PostTypeSerializer(serializers.ModelSerializer):
+    lookup_field = 'slug'
     class Meta:
         model = PostType
         fields = '__all__'
 
 class PostStatusSerializer(serializers.ModelSerializer):
+    lookup_field = 'slug'
     class Meta:
         model = PostStatus
         fields = '__all__'
@@ -37,31 +40,44 @@ class Base64ImageField(serializers.ImageField):
 class PostSerializer(serializers.ModelSerializer):
     updated = serializers.DateTimeField(format="%m-%d-%Y", required=False)
     featured_image = Base64ImageField(required=False)
-    tags = TagSerializer(many=True, read_only=True)
-    categories = CategoryValueSerializer(many=True, read_only=True)
-    post_type = PostTypeSerializer(read_only=True)
-    post_status = PostStatusSerializer(read_only=True)
-    
-    lookup_field = 'slug'
-    pagination_class = []
+    tags = TagSerializer(many=True)
+    categories = CategoryValueSerializer(many=True)
+    post_type = PostTypeSerializer()
+    post_status = PostStatusSerializer()
+
     class Meta:
         model = Post
-        fields = ( 'id', 'post_status', 'title', 'slug', 'content', 'post_type','updated','headline', 'subtitle', 'shadowText', 'excerpt', 'seo_title', 'seo_description',
-                  'categories', 'tags', 'readtime', 'likes', 'dislikes', 'featured_image')
-    def get_post_type(self, obj):
-        return obj.post_type.name if obj.post_type else None
+        fields = ('id', 'post_status', 'title', 'slug', 'content', 'post_type', 'updated',
+                  'headline', 'subtitle', 'shadowText', 'excerpt', 'seo_title', 'seo_description',
+                  'categories', 'tags', 'readtime', 'featured_image')
+        lookup_field = 'slug'  # Set the lookup_field here
+
+class PostCreateSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = Post
+        fields = '__all__'
+        
+class PostUpdateSerializer(serializers.ModelSerializer):
+    featured_image = Base64ImageField(required=False)
+
+    class Meta:
+        model = Post
+        fields = ('id', 'post_status', 'title', 'slug', 'content', 'post_type', 'updated',
+                  'headline', 'subtitle', 'shadowText', 'excerpt', 'seo_title', 'seo_description',
+                  'categories', 'tags', 'readtime', 'featured_image')
+    
+    
     
 class RecentPostSerializer(serializers.ModelSerializer):
-    queryset = Post.objects.filter(post_status__name="Draft").order_by('-published')[:3]
     categories = CategoryValueSerializer(many=True, read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     updated = serializers.DateTimeField(format="%m-%d-%Y")
     post_type = PostTypeSerializer(read_only=True)
 
-
     class Meta:
         model = Post
         fields = ('title', 'slug', 'content', 'updated', 'post_type',
-                  'categories', 'tags', 'readtime', 'likes', 'dislikes', 'featured_image')
+                  'categories', 'tags', 'readtime', 'featured_image')
 
  
