@@ -4,10 +4,15 @@ import readtime
 import uuid
 from django.utils import timezone
 
-POST_STATUS = [
+POST_STATUS = (
     ('draft', 'Draft'),
     ('published', 'Published'),
-]
+)
+
+POST_THEME = (
+    ('dark', 'Dark'),
+    ('light', 'Light'),
+)
 class Tag(models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True, null=True)
@@ -40,6 +45,17 @@ class PostType(models.Model):
         
     def __str__(self):
         return self.name
+    
+class PostTheme(models.Model):
+    name = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True, blank=True, null=True)
+    
+    def save(self, *args, **kwargs):
+        self.slug = slugify(self.name)
+        super(PostTheme, self).save(*args, **kwargs)
+        
+    def __str__(self):
+        return self.name
         
 class Post(models.Model):
     post_type = models.ForeignKey(
@@ -62,6 +78,9 @@ class Post(models.Model):
     seo_title = models.CharField(max_length=400, blank=True, null=True)
     seo_description = models.TextField(blank=True, null=True)
 
+    # styles for the post
+    theme = models.CharField(max_length=100, choices=POST_THEME, default='light')
+    
     def save(self, *args, **kwargs):
         # Update slug if title changes
         self.slug = slugify(self.title)
@@ -69,6 +88,9 @@ class Post(models.Model):
         # Calculate read time
         self.read_time = readtime.of_text(self.content).minutes
 
+        if self.read_time == 0:
+            self.read_time = 1
+            
         # Handle empty title and slug
         if not self.title and not self.slug:
             total_posts = Post.objects.count()

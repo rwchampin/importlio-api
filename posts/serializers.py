@@ -4,41 +4,7 @@ import base64
 
  
 from .models import Post, Tag, Category, PostType 
-
-# Custom Serializer Fields
-class CustomTagField(serializers.RelatedField):
-    def to_representation(self, value):
-        return {
-            'id': value.id,
-            'name': value.name,
-            'slug': value.slug
-        }
-
-    def to_internal_value(self, data):
-        return data['id']  # Only return the ID for saving
-
-class CustomCategoryField(serializers.RelatedField):
-    def to_representation(self, value):
-        return {
-            'id': value.id,
-            'name': value.name,
-            'slug': value.slug
-        }
-
-    def to_internal_value(self, data):
-        return data['id']  # Only return the ID for saving
-
-class CustomPostTypeField(serializers.RelatedField):
-    def to_representation(self, value):
-        return {
-            'id': value.id,
-            'name': value.name,
-            'slug': value.slug
-        }
-
-    def to_internal_value(self, data):
-        return data['id']  # Only return the ID for saving
-
+ 
 # For handling Base64 encoded images
 class Base64ImageField(serializers.ImageField):
     def to_internal_value(self, data):
@@ -72,19 +38,7 @@ class Base64ImageField(serializers.ImageField):
 
         return extension
 
-# Main Post Serializer
-class PostSerializer(serializers.ModelSerializer):
-    tags = CustomTagField(queryset=Tag.objects.all(), many=True)
-    categories = CustomCategoryField(queryset=Category.objects.all(), many=True)
-    post_type = CustomPostTypeField(queryset=PostType.objects.all())
-    featured_image = Base64ImageField(
-        max_length=None, use_url=True,
-    )
-
-    class Meta:
-        model = Post
-        fields = '__all__'
- 
+  
 # Serializer for creating posts
 class PostCreateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -95,6 +49,7 @@ class PostCreateSerializer(serializers.ModelSerializer):
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
+        depth = 1
         fields = '__all__'
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -105,4 +60,29 @@ class CategorySerializer(serializers.ModelSerializer):
 class PostTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = PostType
+        depth = 1
+        fields = '__all__'
+
+class PostSerializer(serializers.ModelSerializer):
+    tags = TagSerializer(many=True)
+    categories = CategorySerializer(many=True)
+    post_type = PostTypeSerializer()
+    updated = serializers.DateTimeField(format="%d-%m-%Y")
+    featured_image = Base64ImageField(
+        max_length=None, use_url=True,
+    )
+    
+
+    class Meta:
+        model = Post
+        fields = [
+            'id', 'title', 'content', 'tags', 'categories', 'slug', 'read_time',  'updated', 'headline', 
+            'post_type', 'featured_image', 'excerpt', 'subtitle', 'seo_title', 'seo_description', 'shadowText'  # Add other fields as needed
+        ]
+
+
+class UpdatePostSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = Post
         fields = '__all__'
