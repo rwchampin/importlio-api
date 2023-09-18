@@ -68,6 +68,7 @@ class PostSerializer(serializers.ModelSerializer):
     categories = CategorySerializer(many=True)
     post_type = PostTypeSerializer()
     updated = serializers.DateTimeField(format="%d-%m-%Y")
+    published = serializers.DateTimeField(format="%d-%m-%Y")
     featured_image = Base64ImageField(
         max_length=None, use_url=True,
     )
@@ -76,7 +77,7 @@ class PostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
         fields = [
-            'id', 'title', 'content', 'tags', 'categories', 'slug', 'read_time',  'updated', 'headline', 
+            'id', 'title', 'content', 'tags', 'categories', 'slug', 'read_time',  'updated', 'headline', 'published',
             'post_type', 'featured_image', 'excerpt', 'subtitle', 'seo_title', 'seo_description', 'shadowText'  # Add other fields as needed
         ]
 

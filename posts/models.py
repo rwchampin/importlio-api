@@ -66,14 +66,14 @@ class Post(models.Model):
     shadowText = models.CharField(max_length=300, blank=True, null=True)
     content = models.TextField(null=True, blank=True)
     excerpt = models.TextField(blank=True, null=True)
-    published = models.DateTimeField(editable=False, default=timezone.now)
+    published = models.DateTimeField(editable=False,auto_now_add=True)
     categories = models.ManyToManyField('Category', blank=True, null=True)
     tags = models.ManyToManyField('Tag', blank=True, null=True)
     slug = models.SlugField(unique=True, blank=True, null=True)
     read_time = models.IntegerField(blank=True, null=True)
     featured_image = models.ImageField(
         upload_to='featured_images/%Y/%m/%d/', blank=True, null=True)
-    updated = models.DateTimeField(default=timezone.now)
+    updated = models.DateTimeField( auto_now=True)
     post_status = models.CharField(max_length=100, choices=POST_STATUS, default='draft')
     seo_title = models.CharField(max_length=400, blank=True, null=True)
     seo_description = models.TextField(blank=True, null=True)
@@ -88,7 +88,7 @@ class Post(models.Model):
         # Calculate read time
         self.read_time = readtime.of_text(self.content).minutes
 
-        if self.read_time == 0:
+        if self.read_time <= 0:
             self.read_time = 1
             
         # Handle empty title and slug

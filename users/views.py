@@ -18,7 +18,7 @@ from .serializers import UserAccountSerializer
 class CustomProviderAuthView(ProviderAuthView):
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
-        import pdb; pdb.set_trace()
+
         if response.status_code == 201:
             access_token = response.data.get('access')
             refresh_token = response.data.get('refresh')
@@ -48,11 +48,11 @@ class CustomProviderAuthView(ProviderAuthView):
 class CustomTokenObtainPairView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
-        import pdb; pdb.set_trace()
+
         if response.status_code == 200:
             access_token = response.data.get('access')
             refresh_token = response.data.get('refresh')
-            import pdb; pdb.set_trace()
+
             response.set_cookie(
                 'access',
                 access_token,

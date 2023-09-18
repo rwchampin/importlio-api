@@ -4,22 +4,16 @@ from rest_framework import status
 from django.http import JsonResponse
 from rest_framework.permissions import AllowAny  # Import AllowAny permission class
 
-# from .utils import WebScraper  # Import the WebScraper class from your utils module
-
-# @api_view(['GET'])  # Use the appropriate HTTP method for your view
-# @permission_classes([])  # Set any permissions your view requires here
-# @authentication_classes([])  # Set any authentication your view requires here
-# def get_oberlo(request):
-    # url = 'https://www.oberlo.com/blog/'
-    # button_xpath = "//button[text()='Show More']"
-    # scraper = WebScraper(url, button_xpath)
-
-    # try:
-    #     html_content = scraper.scrape_page()
-    #     return JsonResponse({'html_content': html_content}, status=status.HTTP_200_OK)
-    # except Exception as e:
-    #     return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-
+from .models import Room, Message
+from .serializers import RoomSerializer, MessageSerializer
+from rest_framework import viewsets
  
+class ChatRoomViewSet(viewsets.ModelViewSet):
+    queryset = Room.objects.all()
+    serializer_class = RoomSerializer
+    permission_classes = [AllowAny]
+    
+class MessageViewSet(viewsets.ModelViewSet):
+    queryset = Message.objects.all()
+    serializer_class = MessageSerializer
+    permission_classes = [AllowAny]

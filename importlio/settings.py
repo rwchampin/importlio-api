@@ -60,7 +60,8 @@ INSTALLED_APPS = [
     "registrants",
     "proxies",
     "products",
-    'customers'
+    'customers',
+    'openai'
 ]
 
 MIDDLEWARE = [
@@ -211,11 +212,11 @@ DJOSER = {
     "PASSWORD_RESET_CONFIRM_RETYPE": True,
     "TOKEN_MODEL": None,
     "SOCIAL_AUTH_ALLOWED_REDIRECT_URIS": getenv("REDIRECT_URLS").split(","),
-    # "SERIALIZERS": {
-    #     'user': 'users.serializers.UserAccountSerializer',
-    #     'current_user': 'users.serializers.UserAccountSerializer',
-    #     'user_create': 'users.serializers.CustomTokenObtainPairView',
-    # }
+    "SERIALIZERS": {
+        'user': 'users.serializers.UserAccountSerializer',
+        'current_user': 'users.serializers.UserAccountSerializer',
+        'user_create': 'users.serializers.CustomTokenObtainPairView',
+    }
 }
 
 AUTH_COOKIE = "access"
