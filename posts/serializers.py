@@ -67,8 +67,21 @@ class PostSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, required=False)
     categories = CategorySerializer(many=True, required=False)
     post_type = PostTypeSerializer(required=False)
-    updated = serializers.DateTimeField(format="%d-%m-%Y", required=False)
-    published = serializers.DateTimeField(format="%d-%m-%Y", required=False)
+    updated = serializers.DateTimeField(required=False)
+    updated_pretty = serializers.SerializerMethodField(method_name='get_updated_pretty', required=False)
+
+    published = serializers.DateTimeField(required=False)
+    published_pretty = serializers.SerializerMethodField(method_name='get_published_pretty', required=False)
+
+    def get_updated_pretty(self, obj):
+        if obj.updated:
+            return obj.updated.strftime("%d-%m-%Y")
+        return None
+
+    def get_published_pretty(self, obj):
+        if obj.published:
+            return obj.published.strftime("%d-%m-%Y")
+        return None
     featured_image = Base64ImageField(
         max_length=None, use_url=True, required=False
     )
@@ -78,7 +91,9 @@ class PostSerializer(serializers.ModelSerializer):
         model = Post
         fields = [
             'id', 'title', 'content', 'tags', 'categories', 'slug', 'read_time',  'updated', 'headline', 'published',
-            'post_type', 'featured_image', 'excerpt', 'subtitle', 'seo_title', 'seo_description', 'shadowText', 'shadow_text_theme', "title_text_theme", "subtitle_text_theme", "headline_text_theme"  # Add other fields as needed
+            'post_type', 'featured_image', 'excerpt', 'subtitle', 'seo_title', 'seo_description', 'shadowText', 'shadow_text_theme', "title_text_theme", "subtitle_text_theme", "headline_text_theme",
+            "updated_pretty", "published_pretty"
+            # Add other fields as needed
         ]
 
 
