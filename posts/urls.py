@@ -7,6 +7,7 @@ router.register(r'posts', views.PostViewSet)
 router.register(r'tags', views.TagViewSet)
 router.register(r'categories', views.CategoryViewSet)
 router.register(r'post-types', views.PostTypeViewSet)
+router.register(r'post-ideas', views.PostTopicIdeasViewSet)
 
 urlpatterns = [
    

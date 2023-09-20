@@ -1,25 +1,27 @@
 from django.utils import timezone
 from rest_framework import viewsets, generics, status
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import AllowAny
 from django.core.files.base import ContentFile
 from rest_framework.decorators import api_view
 
 import base64
-from .models import Post, Tag, Category, PostType
+from .models import Post, Tag, Category, PostType, PostTopicIdeas
 from .serializers import (
     PostSerializer, 
     TagSerializer, 
     CategorySerializer, 
     PostTypeSerializer, 
-    PostCreateSerializer
+    PostCreateSerializer,
+    PostTopicIdeasSerializer
 )
 
 class PostViewSet(viewsets.ModelViewSet):
-    queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = [AllowAny]  # Make this view public
     lookup_field = 'slug'
+    queryset = Post.objects.all()
+    
     
 class PostUpdateView(generics.UpdateAPIView):
     queryset = Post.objects.all()
@@ -110,8 +112,20 @@ class PostsByDate(generics.ListAPIView):
     def get_queryset(self):
         date = self.kwargs['date']
         return Post.objects.filter(published__year=date.year, published__month=date.month, published__day=date.day)
+    
+    
+class PostTopicIdeasViewSet(viewsets.ModelViewSet):
+    serializer_class = PostTopicIdeasSerializer
+    permission_classes = [AllowAny]  # Make this view public
+    queryset = PostTopicIdeas.objects.all()
+    
+    
 @api_view(['GET'])
 def post_count(request):
     if request.method == 'GET':
         count = Post.objects.all().count()
         return Response({'count': count}, status=status.HTTP_200_OK)
+    
+    
+    
+    

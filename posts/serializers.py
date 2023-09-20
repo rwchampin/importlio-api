@@ -3,7 +3,7 @@ from django.core.files.base import ContentFile
 import base64
 
  
-from .models import Post, Tag, Category, PostType 
+from .models import Post, Tag, Category, PostType, PostTopicIdeas
  
 # For handling Base64 encoded images
 class Base64ImageField(serializers.ImageField):
@@ -64,13 +64,13 @@ class PostTypeSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class PostSerializer(serializers.ModelSerializer):
-    tags = TagSerializer(many=True)
-    categories = CategorySerializer(many=True)
-    post_type = PostTypeSerializer()
-    updated = serializers.DateTimeField(format="%d-%m-%Y")
-    published = serializers.DateTimeField(format="%d-%m-%Y")
+    tags = TagSerializer(many=True, required=False)
+    categories = CategorySerializer(many=True, required=False)
+    post_type = PostTypeSerializer(required=False)
+    updated = serializers.DateTimeField(format="%d-%m-%Y", required=False)
+    published = serializers.DateTimeField(format="%d-%m-%Y", required=False)
     featured_image = Base64ImageField(
-        max_length=None, use_url=True,
+        max_length=None, use_url=True, required=False
     )
     
 
@@ -78,7 +78,7 @@ class PostSerializer(serializers.ModelSerializer):
         model = Post
         fields = [
             'id', 'title', 'content', 'tags', 'categories', 'slug', 'read_time',  'updated', 'headline', 'published',
-            'post_type', 'featured_image', 'excerpt', 'subtitle', 'seo_title', 'seo_description', 'shadowText'  # Add other fields as needed
+            'post_type', 'featured_image', 'excerpt', 'subtitle', 'seo_title', 'seo_description', 'shadowText', 'shadow_text_theme', "title_text_theme", "subtitle_text_theme", "headline_text_theme"  # Add other fields as needed
         ]
 
 
@@ -86,4 +86,10 @@ class UpdatePostSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Post
+        fields = '__all__'
+        
+        
+class PostTopicIdeasSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PostTopicIdeas
         fields = '__all__'

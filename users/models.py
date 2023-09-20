@@ -60,5 +60,9 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name']
 
+    @property
+    def get_logged_in_user():
+        return request.user
+    
     def __str__(self):
         return self.email

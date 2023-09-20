@@ -11,21 +11,32 @@ authors = (
     ("user", "User"),
     ("bot", "Bot")
 )
+
 class Room(models.Model):
     name = models.CharField(max_length=255)
-    user = models.ForeignKey(User, blank=True, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
+    user_email = models.CharField(max_length=255, default="rwchampin@gmail.com")
+    # user = models.ForeignKey(User, blank=True,null=True, on_delete=models.CASCADE, default=User.objects.get(email="rwchampin@gmail.com").id)
+    created_at = models.DateTimeField(auto_now=True)
     bot_type = models.CharField(max_length=255, choices=bots, default=bots[0][0])    
     
+    # def save(self, *args, **kwargs):
+    #     if not self.user:
+    #         self.user = self.request.user.id
+
     def __str__(self):
         return self.name
 
 class Message(models.Model):
     room = models.ForeignKey(Room, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, blank=True, on_delete=models.CASCADE)
+    user_email = models.CharField(max_length=255, default="rwchampin@gmail.com")
+    # user = models.ForeignKey(User, blank=True, null=True, on_delete=models.CASCADE, default=User.objects.get(email="rwchampin@gmail.com").id)
     is_bot = models.BooleanField(default=False)
     content = models.TextField()
-    timestamp = models.DateTimeField(auto_now_add=True)
+    timestamp = models.DateTimeField(auto_now_add=True,)
+    
+    # def save(self, *args, **kwargs):
+    #     if not self.user:
+    #         self.user = self.request.user.id
 
     def __str__(self):
         return f"{self.user.username}: {self.content}"
