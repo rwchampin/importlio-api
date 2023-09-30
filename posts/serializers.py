@@ -92,7 +92,7 @@ class PostSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'content', 'tags', 'categories', 'slug', 'read_time',  'updated', 'headline', 'published',
             'post_type', 'featured_image', 'excerpt', 'subtitle', 'seo_title', 'seo_description', 'shadowText', 'shadow_text_theme', "title_text_theme", "subtitle_text_theme", "headline_text_theme",
-            "updated_pretty", "published_pretty"
+            "updated_pretty", "published_pretty", "seo_keywords"
             # Add other fields as needed
         ]
 

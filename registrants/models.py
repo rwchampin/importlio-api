@@ -5,7 +5,7 @@ class Registrant(models.Model):
     email = models.EmailField()
     first_name = models.CharField(max_length=50, blank=True, null=True)
     last_name = models.CharField(max_length=50, blank=True, null=True)
-    
+    # created = models.DateTimeField(auto_now_add=True)
     # def create(self, validated_data):
 
         

@@ -121,3 +121,17 @@ class LogoutView(APIView):
 class UserAccountViewSet(viewsets.ModelViewSet):
     queryset = UserAccount.objects.all()
     serializer_class = UserAccountSerializer
+    
+
+class UserAccountStatus(APIView):
+    permission_classes = [AllowAny,]
+    authentication_classes = []
+    def post(self, request, format=None):
+        email = request.data['email']
+        user = UserAccount.objects.get(email=email)
+        if user is None:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        else:
+            # return entire user obj as json
+            serializer = UserAccountSerializer(user)
+            return Response(serializer.data)

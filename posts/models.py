@@ -67,8 +67,8 @@ class Post(models.Model):
     content = models.TextField(null=True, blank=True)
     excerpt = models.TextField(blank=True, null=True)
     published = models.DateTimeField(editable=False,auto_now_add=True)
-    categories = models.ManyToManyField('Category', blank=True, null=True)
-    tags = models.ManyToManyField('Tag', blank=True, null=True)
+    categories = models.ManyToManyField('Category', blank=True)
+    tags = models.ManyToManyField('Tag', blank=True)
     slug = models.SlugField(unique=True, blank=True, null=True, max_length=500)
     read_time = models.IntegerField(blank=True, null=True)
     featured_image = models.ImageField(
@@ -77,7 +77,7 @@ class Post(models.Model):
     post_status = models.CharField(max_length=100, choices=POST_STATUS, default='draft')
     seo_title = models.CharField(max_length=400, blank=True, null=True)
     seo_description = models.TextField(blank=True, null=True)
-
+    seo_keywords = models.TextField(blank=True, null=True)
 
     # styles for the post
     shadow_text_theme = models.CharField(max_length=20, choices=POST_THEME, default='light')

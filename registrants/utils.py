@@ -25,3 +25,29 @@ def send_registration_email(email):
         print('Registration email sent successfully')
     else:
         print('Failed to send registration email')
+
+def send_subscriber_signup_alert_email(email):
+    # Initialize the AWS SES client
+    ses_client = boto3.client('ses', region_name=settings.AWS_REGION_NAME)  # Replace with your desired AWS region
+
+    # Compose the email
+    subject = 'New Subscriber Signup'
+    message = 'A new subscriber has signed up for Importlio!'
+    sender_email = settings.AWS_SES_FROM_EMAIL  # Replace with your verified sender email address
+    recipient_email = settings.AWS_SES_FROM_EMAIL
+
+    # Send the email
+    response = ses_client.send_email(
+        Source=sender_email,
+        Destination={'ToAddresses': [recipient_email]},
+        Message={
+            'Subject': {'Data': subject},
+            'Body': {'Text': {'Data': message}}
+        }
+    )
+
+    # Check the response status
+    if response['ResponseMetadata']['HTTPStatusCode'] == 200:
+        print('Registration email sent successfully')
+    else:
+        print('Failed to send registration email')

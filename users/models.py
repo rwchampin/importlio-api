@@ -1,9 +1,21 @@
 from django.db import models
+import datetime
 from django.contrib.auth.models import (
     BaseUserManager,
     AbstractBaseUser,
     PermissionsMixin
 )
+from django.utils import timezone
+memberships = (
+    ('subcriber', 'Subscriber'),
+    ('trial', 'Trial'),
+    ('basic', 'Basic'),
+    ('premium', 'Premium'),
+    ('enterprise', 'Enterprise')
+)
+
+TRIAL_MEMBERSHIP_DURATION = 14
+
 
 
 class UserAccountManager(BaseUserManager):
@@ -39,9 +51,8 @@ class UserAccountManager(BaseUserManager):
 
 
 class UserAccount(AbstractBaseUser, PermissionsMixin):
-    first_name = models.CharField(max_length=255)
-    last_name = models.CharField(max_length=255)
-    email = models.EmailField(unique=True, max_length=255)
+    first_name = models.CharField(max_length=255, null=True, blank=True)
+    last_name = models.CharField(max_length=255, null=True, blank=True)
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
@@ -49,20 +60,47 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
 
     amazon_associate_id = models.CharField(max_length=255, null=True, blank=True)
     
+    # Contact Details
+    phone = models.CharField(max_length=255, null=True, blank=True)
+    email = models.EmailField(unique=True, max_length=255)
+    
+    # Location Details
     address = models.CharField(max_length=255, null=True, blank=True)
     city = models.CharField(max_length=255, null=True, blank=True)
     state = models.CharField(max_length=255, null=True, blank=True)
     country = models.CharField(max_length=255, null=True, blank=True)
     tz = models.CharField(max_length=255, null=True, blank=True)
+    region = models.CharField(max_length=255, null=True, blank=True)
+    zip = models.CharField(max_length=255, null=True, blank=True)
+    
+    
+    
+    # Account Details
+    account_active = models.BooleanField(default=True)
+    account_type = models.CharField(max_length=255, choices=memberships, blank=True, null=True)
+    account_created = models.DateTimeField(auto_now_add=True)
+    account_updated = models.DateTimeField(auto_now=True)
 
     objects = UserAccountManager()
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name']
-
-    @property
-    def get_logged_in_user():
-        return request.user
     
+    def trial_days_remaining(self):
+        if self.account_type == 'trial':
+            if self.account_created + datetime.timedelta(days=TRIAL_MEMBERSHIP_DURATION) <= datetime.now():
+                return 0
+            else:
+                return (self.account_created + datetime.timedelta(days=TRIAL_MEMBERSHIP_DURATION) - datetime.now()).days
+        else:
+            return 0
+        
+    def calculate_account_status(self):
+        if self.account_type == 'trial':
+            if self.account_created + datetime.timedelta(days=TRIAL_MEMBERSHIP_DURATION) <= datetime.now():
+                self.account_active = False
+                self.save()
+
+        
     def __str__(self):
         return self.email
