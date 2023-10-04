@@ -1,32 +1,6 @@
 from rest_framework import serializers
-from .models import DataSource, Niche, Email, Tag, MarketingList
-
-class DataSourceSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = DataSource
-        fields = '__all__'
-
-class PreviewNicheSerializer(serializers.ModelSerializer):
-    # Define a serializer for the Niche model
-    class NicheSerializer(serializers.ModelSerializer):
-        class Meta:
-            model = Niche
-            fields = '__all__'
-
-    # Rename 'emails' field to 'email_count' and 'tags' field to 'tag_count'
-    email_count = serializers.SerializerMethodField()
-    tag_count = serializers.SerializerMethodField()
-    niche = NicheSerializer()  # Include the entire Niche JSON
-
-    def get_email_count(self, obj):
-        return obj.emails.all().count()
-
-    def get_tag_count(self, obj):
-        return obj.tags.all().count()
-
-    class Meta:
-        model = Niche
-        fields = '__all__'
+from .models import Email, Tag, MarketingList, MarketingStatistic
+# Include the entire Niche JSON
 
 class EmailSerializer(serializers.ModelSerializer):
     class Meta:
@@ -38,8 +12,30 @@ class TagSerializer(serializers.ModelSerializer):
         model = Tag
         fields = '__all__'
 
+class MarketingStatisticSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MarketingStatistic
+        fields = '__all__'
 class PreviewMarketingListSerializer(serializers.ModelSerializer):
-    # niches = PreviewNicheSerializer(many=True, read_only=True)
+    # get a count of the total number of emails with a many to many relationahip
+    email_count = serializers.SerializerMethodField()
+    
+    def get_email_count(self, obj):
+        return obj.emails.count()
+    class Meta:
+        model = MarketingList
+        fields = ['name', 'description', 'email_count', 'url', 'slug']
+
+class MarketingListSerializer(serializers.ModelSerializer):
+    # get a count of the total number of emails with a many to many relationahip
+    emails = EmailSerializer(many=True, read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
+    statistics = serializers.SerializerMethodField()
+    
+    def get_statistics(self, obj):
+        return MarketingStatisticSerializer(obj.statistics.all(), many=True).data
+    
     class Meta:
         model = MarketingList
         fields = '__all__'
+        

@@ -6,6 +6,7 @@ router = DefaultRouter()
 
 # router.register(r'niches', views.NicheViewSet)
 # router.register(r'emails', views.EmailViewSet)
+router.register(r'lists', views.MarketingListViewSet)
 router.register(r'list-previews', views.PreviewMarketingListViewSet)
 
 urlpatterns = [

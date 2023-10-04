@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     'customers',
     'openai',
     'marketing',
+    "subscribers"
 ]
 
 MIDDLEWARE = [
@@ -216,7 +217,7 @@ DJOSER = {
     "SERIALIZERS": {
         'user': 'users.serializers.UserAccountSerializer',
         'current_user': 'users.serializers.UserAccountSerializer',
-        'user_create': 'users.serializers.CustomTokenObtainPairView',
+        'user_create': 'users.serializers.UserAccountCreateSerializer',
     }
 }
 

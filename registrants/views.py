@@ -19,9 +19,12 @@ class RegistrantDetailView(generics.RetrieveAPIView):
     authentication_classes = []
     permission_classes = []
     
-    
-    
-    
+class RegistrantEmailDetailView(generics.RetrieveAPIView):
+    queryset = Registrant.objects.all()
+    serializer_class = RegistrantSerializer
+    authentication_classes = []
+    permission_classes = []
+    lookup_field = 'email'
     
     
  

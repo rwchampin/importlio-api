@@ -1,7 +1,7 @@
 from rest_framework import viewsets, generics
 from rest_framework.permissions import AllowAny
-from .models import Niche, Email, MarketingList, MarketingStatistic
-from .serializers import PreviewNicheSerializer, EmailSerializer, PreviewMarketingListSerializer
+from .models import Email, MarketingList, MarketingStatistic
+from .serializers import EmailSerializer, PreviewMarketingListSerializer, MarketingListSerializer
 from rest_framework.decorators import api_view
 from django.http import JsonResponse, HttpResponse
 import csv
@@ -9,148 +9,150 @@ import csv
 # Create your views here.
 from .utils import scrape_google_search, get_google_search_results
 
-class NicheViewSet(viewsets.ModelViewSet):
-    queryset = Niche.objects.all()
-    serializer_class = PreviewNicheSerializer
-    permission_classes = (AllowAny,)
-    
+
 class EmailViewSet(viewsets.ModelViewSet):
     queryset = Email.objects.all()
     serializer_class = EmailSerializer
     permission_classes = (AllowAny,)
+
     
 class PreviewMarketingListViewSet(viewsets.ModelViewSet):
     queryset = MarketingList.objects.all()
     serializer_class = PreviewMarketingListSerializer
     permission_classes = (AllowAny,)
     
-class EmailListCreateView(generics.ListCreateAPIView):
-    queryset = Email.objects.all()
-    serializer_class = EmailSerializer
+class MarketingListViewSet(viewsets.ModelViewSet):
+    queryset = MarketingList.objects.all()
+    serializer_class = MarketingListSerializer
     permission_classes = (AllowAny,)
+    lookup_field = 'slug'
+# class EmailListCreateView(generics.ListCreateAPIView):
+#     queryset = Email.objects.all()
+#     serializer_class = EmailSerializer
+#     permission_classes = (AllowAny,)
     
-    def get_queryset(self):
-        queryset = Email.objects.all()
-        niche = self.request.query_params.get('niche', None)
-        if niche is not None:
-            queryset = queryset.filter(niche__name=niche)
-        return queryset
+#     def get_queryset(self):
+#         queryset = Email.objects.all()
+#         niche = self.request.query_params.get('niche', None)
+#         if niche is not None:
+#             queryset = queryset.filter(niche__name=niche)
+#         return queryset
     
-    def create(self, request, *args, **kwargs):
-        query = request.data.get('query', None)
-        parsed_html = scrape_google_search(query, 200)
-        import pdb; pdb.set_trace()
-        return super().create(request, *args, **kwargs)
+#     def create(self, request, *args, **kwargs):
+#         query = request.data.get('query', None)
+#         parsed_html = scrape_google_search(query, 200)
+#         import pdb; pdb.set_trace()
+#         return super().create(request, *args, **kwargs)
     
     
-def create_marketing_niches():
-    niches = [
-        "Fitness and Health Enthusiasts",
-        "Outdoor Adventure and Hiking",
-        "Yoga and Meditation Practitioners",
-        "Vegan and Plant-Based Dieters",
-        "Pet Owners and Animal Lovers",
-        "Parents of Newborns",
-        "Gamers and Gaming Enthusiasts",
-        "Home Improvement and DIY Hobbyists",
-        "Travel and Adventure Seekers",
-        "Beauty and Skincare Enthusiasts",
-        "Foodies and Gourmet Cooking",
-        "Sustainable and Eco-Friendly Consumers",
-        "Personal Finance and Investment",
-        "Fashion and Style Aficionados",
-        "Tech Geeks and Gadgets Lovers",
-        "Photography Enthusiasts",
-        "Coffee and Tea Connoisseurs",
-        "Bookworms and Bibliophiles",
-        "Fitness for Seniors",
-        "Natural and Organic Product Consumers",
-        "Cyclists and Bike Enthusiasts",
-        "CrossFit and Weightlifting",
-        "Wine and Wine Tasting",
-        "Parents of Toddlers",
-        "Freelancers and Remote Workers",
-        "Home Decor and Interior Design",
-        "Nutrition and Supplements",
-        "Gardening and Horticulture",
-        "DIY Crafters and Artisans",
-        "Sustainable Fashion and Clothing",
-        "Personal Development and Self-Help",
-        "Music and Musician Community",
-        "CrossFit and HIIT Workouts",
-        "Keto and Low-Carb Dieters",
-        "Coffee at Home Brewing",
-        "Car Enthusiasts and Auto Lovers",
-        "Digital Nomads and Travelers",
-        "Collectors (e.g., Coins, Stamps)",
-        "Survivalists and Preppers",
-        "Wine Collectors and Enthusiasts",
-        "Mindfulness and Stress Relief",
-        "Vintage and Retro Fashion",
-        "Tech-Savvy Parents",
-        "Knitting and Crocheting",
-        "Vegetarian Diet Followers",
-        "Organic and Sustainable Farming",
-        "Natural Parenting and Attachment",
-        "Health and Wellness Coaches",
-        "Mountain Climbing and Adventure",
-        "Personal Finance Bloggers",
-        "Skincare for Specific Skin Types",
-        "Smart Home and IoT Enthusiasts",
-        "Fantasy Sports and Betting",
-        "Pet Groomers and Trainers",
-        "Cooking and Baking for Beginners",
-        "RV and Camping Enthusiasts",
-        "Freelance Writers and Bloggers",
-        "Antique Collectors and Resellers",
-        "Tiny House Living",
-        "Herbal Remedies and Natural Healing",
-        "Personal Branding and Influencers",
-        "Astronomy and Stargazing",
-        "Skiing and Snowboarding",
-        "Paddleboarding and Water Sports",
-        "Hiking Gear and Equipment",
-        "Digital Artists and Illustrators",
-        "Sustainable Living Blogs",
-        "Drone Enthusiasts and Pilots",
-        "Minimalism and Decluttering",
-        "Sustainable Energy and Solar",
-        "Craft Beer and Microbreweries",
-        "Paleo Diet and Lifestyle",
-        "Graphic Designers and Creatives",
-        "Motorcyclists and Bikers",
-        "Mindful Parenting and Attachment",
-        "Science Fiction and Fantasy Fans",
-        "Beach and Coastal Living",
-        "Language Learning and Polyglots",
-        "Fitness Equipment and Gear",
-        "Personal Finance for Millennials",
-        "Sustainable Transportation",
-        "Geocaching and Treasure Hunting",
-        "3D Printing and Makers",
-        "Vintage Car Restoration",
-        "Alternative Medicine and Holistic Health",
-        "Rock Climbing and Bouldering",
-        "Backyard Farming and Homesteading",
-        "DIY Electronics and Robotics",
-        "Clean Beauty and Skincare",
-        "Film Photography and Analog",
-        "Hiking and Camping Gear Reviews",
-        "Collectible Toys and Figurines",
-        "Astronomy and Astrophotography",
-        "Watercolor Painting and Art",
-        "Surfing and Surfboard Enthusiasts",
-        "Off-Grid Living and Sustainability",
-        "Tiny House Builders and Enthusiasts",
-        "Vinyl Record Collectors",
-        "Urban Gardening and Hydroponics",
-        "Board Game Enthusiasts"
-    ]
+# def create_marketing_niches():
+#     niches = [
+#         "Fitness and Health Enthusiasts",
+#         "Outdoor Adventure and Hiking",
+#         "Yoga and Meditation Practitioners",
+#         "Vegan and Plant-Based Dieters",
+#         "Pet Owners and Animal Lovers",
+#         "Parents of Newborns",
+#         "Gamers and Gaming Enthusiasts",
+#         "Home Improvement and DIY Hobbyists",
+#         "Travel and Adventure Seekers",
+#         "Beauty and Skincare Enthusiasts",
+#         "Foodies and Gourmet Cooking",
+#         "Sustainable and Eco-Friendly Consumers",
+#         "Personal Finance and Investment",
+#         "Fashion and Style Aficionados",
+#         "Tech Geeks and Gadgets Lovers",
+#         "Photography Enthusiasts",
+#         "Coffee and Tea Connoisseurs",
+#         "Bookworms and Bibliophiles",
+#         "Fitness for Seniors",
+#         "Natural and Organic Product Consumers",
+#         "Cyclists and Bike Enthusiasts",
+#         "CrossFit and Weightlifting",
+#         "Wine and Wine Tasting",
+#         "Parents of Toddlers",
+#         "Freelancers and Remote Workers",
+#         "Home Decor and Interior Design",
+#         "Nutrition and Supplements",
+#         "Gardening and Horticulture",
+#         "DIY Crafters and Artisans",
+#         "Sustainable Fashion and Clothing",
+#         "Personal Development and Self-Help",
+#         "Music and Musician Community",
+#         "CrossFit and HIIT Workouts",
+#         "Keto and Low-Carb Dieters",
+#         "Coffee at Home Brewing",
+#         "Car Enthusiasts and Auto Lovers",
+#         "Digital Nomads and Travelers",
+#         "Collectors (e.g., Coins, Stamps)",
+#         "Survivalists and Preppers",
+#         "Wine Collectors and Enthusiasts",
+#         "Mindfulness and Stress Relief",
+#         "Vintage and Retro Fashion",
+#         "Tech-Savvy Parents",
+#         "Knitting and Crocheting",
+#         "Vegetarian Diet Followers",
+#         "Organic and Sustainable Farming",
+#         "Natural Parenting and Attachment",
+#         "Health and Wellness Coaches",
+#         "Mountain Climbing and Adventure",
+#         "Personal Finance Bloggers",
+#         "Skincare for Specific Skin Types",
+#         "Smart Home and IoT Enthusiasts",
+#         "Fantasy Sports and Betting",
+#         "Pet Groomers and Trainers",
+#         "Cooking and Baking for Beginners",
+#         "RV and Camping Enthusiasts",
+#         "Freelance Writers and Bloggers",
+#         "Antique Collectors and Resellers",
+#         "Tiny House Living",
+#         "Herbal Remedies and Natural Healing",
+#         "Personal Branding and Influencers",
+#         "Astronomy and Stargazing",
+#         "Skiing and Snowboarding",
+#         "Paddleboarding and Water Sports",
+#         "Hiking Gear and Equipment",
+#         "Digital Artists and Illustrators",
+#         "Sustainable Living Blogs",
+#         "Drone Enthusiasts and Pilots",
+#         "Minimalism and Decluttering",
+#         "Sustainable Energy and Solar",
+#         "Craft Beer and Microbreweries",
+#         "Paleo Diet and Lifestyle",
+#         "Graphic Designers and Creatives",
+#         "Motorcyclists and Bikers",
+#         "Mindful Parenting and Attachment",
+#         "Science Fiction and Fantasy Fans",
+#         "Beach and Coastal Living",
+#         "Language Learning and Polyglots",
+#         "Fitness Equipment and Gear",
+#         "Personal Finance for Millennials",
+#         "Sustainable Transportation",
+#         "Geocaching and Treasure Hunting",
+#         "3D Printing and Makers",
+#         "Vintage Car Restoration",
+#         "Alternative Medicine and Holistic Health",
+#         "Rock Climbing and Bouldering",
+#         "Backyard Farming and Homesteading",
+#         "DIY Electronics and Robotics",
+#         "Clean Beauty and Skincare",
+#         "Film Photography and Analog",
+#         "Hiking and Camping Gear Reviews",
+#         "Collectible Toys and Figurines",
+#         "Astronomy and Astrophotography",
+#         "Watercolor Painting and Art",
+#         "Surfing and Surfboard Enthusiasts",
+#         "Off-Grid Living and Sustainability",
+#         "Tiny House Builders and Enthusiasts",
+#         "Vinyl Record Collectors",
+#         "Urban Gardening and Hydroponics",
+#         "Board Game Enthusiasts"
+#     ]
 
-    if Niche.objects.all().count() > 0:
-        return
-    for niche in niches:
-        Niche.objects.create(name=niche)
+#     if Niche.objects.all().count() > 0:
+#         return
+#     for niche in niches:
+#         Niche.objects.create(name=niche)
 
 def generate_google_query(keywords):
     # Prepare the base Google search URL
@@ -211,17 +213,17 @@ def bulk_create_emails(request):
             raise Exception('No emails provided')
         
         
-class EmailListView(generics.ListAPIView):
-    queryset = Email.objects.all()
-    serializer_class = EmailSerializer
-    permission_classes = (AllowAny,)
+# class EmailListView(generics.ListAPIView):
+    # queryset = Email.objects.all()
+    # serializer_class = EmailSerializer
+    # permission_classes = (AllowAny,)
     
-    def get_queryset(self):
-        queryset = Email.objects.all()
-        niche = self.request.query_params.get('niche', None)
-        if niche is not None:
-            queryset = queryset.filter(niche__name=niche)
-        return queryset
+    # def get_queryset(self):
+    #     queryset = Email.objects.all()
+    #     niche = self.request.query_params.get('niche', None)
+    #     if niche is not None:
+    #         queryset = queryset.filter(niche__name=niche)
+    #     return queryset
     
 # class NicheListView(generics.ListAPIView):
 #     queryset = Niche.objects.all()
@@ -233,40 +235,40 @@ class EmailListView(generics.ListAPIView):
 #         return queryset
     
     
-@api_view(['POST'])
-def download_emails_by_niche(request):
-    if request.method == 'POST':
-        niche = request.data.get('niche', None)
-        if niche is None:
-            # throw error
-            raise Exception('No niche provided')
-    # Query the database to get emails by niche
-    emails = Email.objects.filter(niche=niche).values_list('email', flat=True)
+# @api_view(['POST'])
+# def download_emails_by_niche(request):
+#     if request.method == 'POST':
+#         niche = request.data.get('niche', None)
+#         if niche is None:
+#             # throw error
+#             raise Exception('No niche provided')
+#     # Query the database to get emails by niche
+#     emails = Email.objects.filter(niche=niche).values_list('email', flat=True)
 
-    # Create a CSV response
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = f'attachment; filename="{niche}_emails.csv"'
+#     # Create a CSV response
+#     response = HttpResponse(content_type='text/csv')
+#     response['Content-Disposition'] = f'attachment; filename="{niche}_emails.csv"'
 
-    # Create a CSV writer
-    writer = csv.writer(response)
+#     # Create a CSV writer
+#     writer = csv.writer(response)
 
-    # Write the CSV header (if needed)
-    # writer.writerow(['Email'])
+#     # Write the CSV header (if needed)
+#     # writer.writerow(['Email'])
 
-    # Write the email data to the CSV file
-    for email in emails:
-        writer.writerow([email])
+#     # Write the email data to the CSV file
+#     for email in emails:
+#         writer.writerow([email])
 
-    return response
+#     return response
 
 
 
-def populate_statistics():
-    # Create niches for each target audience
-    genz = Niche.objects.get_or_create(name="Gen Z")[0]
-    b2b = Niche.objects.get_or_create(name="B2B Decision Makers")[0]
-    health = Niche.objects.get_or_create(name="Health and Wellness Enthusiasts")[0]
-    tech = Niche.objects.get_or_create(name="Tech Enthusiasts")[0]
+# def populate_statistics():
+#     # Create niches for each target audience
+#     genz = Niche.objects.get_or_create(name="Gen Z")[0]
+#     b2b = Niche.objects.get_or_create(name="B2B Decision Makers")[0]
+#     health = Niche.objects.get_or_create(name="Health and Wellness Enthusiasts")[0]
+#     tech = Niche.objects.get_or_create(name="Tech Enthusiasts")[0]
 
 
     
@@ -309,12 +311,12 @@ def populate_statistics():
         ("Tech Content Creation", "Tech enthusiasts create and consume tech-related content. Tech YouTubers, bloggers, and influencers are in high demand, with some earning substantial incomes through sponsored content and affiliate marketing.", tech),
     ]
 
-    for name, description, niche in statistics_data:
-        MarketingStatistic.objects.get_or_create(
-            name=name,
-            description=description,
-            niche=niche
-        )
+    # for name, description, niche in statistics_data:
+    #     MarketingStatistic.objects.get_or_create(
+    #         name=name,
+    #         description=description,
+    #         niche=niche
+    #     )
 
 # Call the function to populate the statistics
 # populate_statistics()

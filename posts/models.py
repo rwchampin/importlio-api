@@ -3,6 +3,8 @@ from django.utils.text import slugify
 import readtime
 import uuid
 from django.utils import timezone
+from PIL import Image
+from django.core.exceptions import ValidationError
 
 POST_STATUS = (
     ('draft', 'Draft'),
@@ -13,6 +15,40 @@ POST_THEME = (
     ('dark', 'Dark'),
     ('light', 'Light'),
 )
+
+
+class FeaturedImage(models.Model):
+    filename = models.CharField(max_length=255, blank=True, null=True)
+    original_image = models.ImageField(
+        upload_to='featured_images/%Y/%m/%d/', blank=True, null=True)
+    height = models.FloatField(blank=True, null=True)
+    width = models.FloatField(blank=True, null=True)
+    thumbnail = models.ImageField(
+        upload_to='featured_images/thumbnail/%Y/%m/%d/', blank=True, null=True)
+    medium = models.ImageField(
+        upload_to='featured_images/medium/%Y/%m/%d/', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def save(self, *args, **kwargs):
+        # Open the image
+        image = Image.open(self.original_image)
+        
+        # Define the minimum dimensions
+        min_width = 1280
+        min_height = 1080
+        
+        # Check if the image dimensions meet the minimum requirements
+        if image.width < min_width or image.height < min_height:
+            raise ValidationError(f"Image dimensions must be at least {min_width}x{min_height}px")
+        
+        self.height = image.height
+        self.width = image.width
+        # Continue with the save process if dimensions are valid
+        super(FeaturedImage, self).save(*args, **kwargs)
+    
+    def __str__(self):
+        return self.image.url
 class Tag(models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True, null=True)
@@ -73,6 +109,8 @@ class Post(models.Model):
     read_time = models.IntegerField(blank=True, null=True)
     featured_image = models.ImageField(
         upload_to='featured_images/%Y/%m/%d/', blank=True, null=True)
+    optimized_image = models.ForeignKey(
+        'FeaturedImage', on_delete=models.SET_NULL, blank=True, null=True)
     updated = models.DateTimeField( auto_now=True)
     post_status = models.CharField(max_length=100, choices=POST_STATUS, default='draft')
     seo_title = models.CharField(max_length=400, blank=True, null=True)

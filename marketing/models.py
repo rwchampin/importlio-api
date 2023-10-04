@@ -11,7 +11,7 @@ list_level_TYPES = (
 # name field as the default field to slugify
 # auto slugify mixin and if no title it names it untitled<num of eisting untitled + 1>
 class AutoSlugMixin(models.Model):
-    slug = models.SlugField( null=True, max_length=255)
+    slug = models.SlugField(blank=True, null=True, max_length=255)
     class Meta:
         abstract = True
     def save(self, *args, **kwargs):
@@ -29,7 +29,7 @@ class MarketingStatistic(models.Model):
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    marketing_list = models.ForeignKey('MarketingList', related_name='statistics', on_delete=models.CASCADE)
+    marketing_list = models.ForeignKey('MarketingList', related_name='statistics', on_delete=models.SET_NULL, null=True, blank=True)
     
     def __str__(self):
         return self.name
@@ -37,7 +37,7 @@ class MarketingStatistic(models.Model):
 
 class Email(models.Model):
     email = models.EmailField(unique=True, max_length=255)
-    marketing_list = models.ManyToManyField('MarketingList', related_name='emails')
+    marketing_list = models.ManyToManyField('MarketingList', related_name='email_marketing_list')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -66,14 +66,13 @@ class Tag(AutoSlugMixin, models.Model):
 
 class MarketingList(AutoSlugMixin, models.Model):
     name = models.CharField(max_length=255, unique=True)
-    description = models.TextField()
+    description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     level = models.CharField(max_length=1, choices=list_level_TYPES, default='1')
-    url = models.SlugField(blank=True, null=True, max_length=255)
-    emails = models.ManyToManyField(Email, related_name='lists')
-    type = models.ForeignKey(ListType, related_name='lists', on_delete=models.SET_NULL, null=True, blank=True)
-    tags = models.ManyToManyField(Tag, related_name='lists')
+    emails = models.ManyToManyField(Email, related_name='marketing_list_emails', blank=True, null=True)
+    type = models.ForeignKey(ListType, related_name='type', on_delete=models.SET_NULL, null=True, blank=True)
+    tags = models.ManyToManyField(Tag, related_name='tags', blank=True, null=True)
     
     def __str__(self):
         return self.name

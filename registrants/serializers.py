@@ -14,3 +14,11 @@ class RegistrantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Registrant
         fields = '__all__'
+        extra_kwargs = {
+            'email': {
+                'error_messages': {
+                    'blank': 'Email is required',
+                    'unique': 'Email already exists',
+                }
+            },
+        }

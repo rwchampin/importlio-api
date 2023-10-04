@@ -6,7 +6,6 @@ from .views import (
     CustomTokenVerifyView,
     LogoutView,
     UserAccountViewSet,
-    UserAccountStatus
 )
 from rest_framework import routers
 from django.conf.urls import include
@@ -24,7 +23,6 @@ urlpatterns = [
     path('jwt/refresh/', CustomTokenRefreshView.as_view()),
     path('jwt/verify/', CustomTokenVerifyView.as_view()),
     path('logout/', LogoutView.as_view()),
-    path('users/status/', UserAccountStatus.as_view()),
     path('auth/', include(router.urls)),
     
 ]

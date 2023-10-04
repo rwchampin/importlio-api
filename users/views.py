@@ -12,13 +12,13 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView
 )
 from .models import UserAccount
+from registrants.models import Registrant
 from rest_framework.permissions import AllowAny
 from .serializers import UserAccountSerializer
 
 class CustomProviderAuthView(ProviderAuthView):
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
-
         if response.status_code == 201:
             access_token = response.data.get('access')
             refresh_token = response.data.get('refresh')
@@ -41,7 +41,7 @@ class CustomProviderAuthView(ProviderAuthView):
                 httponly=settings.AUTH_COOKIE_HTTP_ONLY,
                 samesite=settings.AUTH_COOKIE_SAMESITE
             )
-
+            response['user'] = 'test'
         return response
 
 
@@ -52,7 +52,12 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         if response.status_code == 200:
             access_token = response.data.get('access')
             refresh_token = response.data.get('refresh')
-
+            
+            # return the user object
+            user = UserAccount.objects.get(email=request.data['email'])
+            serializer = UserAccountSerializer(user)
+            response.data['user'] = serializer.data
+            
             response.set_cookie(
                 'access',
                 access_token,
@@ -121,17 +126,61 @@ class LogoutView(APIView):
 class UserAccountViewSet(viewsets.ModelViewSet):
     queryset = UserAccount.objects.all()
     serializer_class = UserAccountSerializer
+    authentication_classes = []
+    permission_classes = []
+
+    def create(self, request, *args, **kwargs):
+        # call UserAccount Model create_user method to make new user
+        serializer = UserAccountSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    
+    
+# class CreateUserAccount(CreateAPIView):
+#     queryset = UserAccount.objects.all()
+#     serializer_class = UserAccountSerializer
+#     permission_classes = [AllowAny,]
+#     authentication_classes = [AllowAny,]
+    
+#     def create(self, request, *args, **kwargs):
+#         import pdb; pdb.set_trace()
+#         # call UserAccount Model create_user method to make new user
+#         serializer = UserAccountSerializer(data=request.data)
+#         serializer.is_valid(raise_exception=True)
+#         serializer.save()
+#         return Response(serializer.data, status=status.HTTP_201_CREATED)
     
 
+
+    
+
+def checkIfUserExists(email):
+    try:
+        user = UserAccount.objects.get(email=email)
+        return True
+    except UserAccount.DoesNotExist:
+        return False
+    
+def checkIfRegistrantExists(email):
+    try:
+        registrant = Registrant.objects.get(email=email)
+        return True
+    except Registrant.DoesNotExist:
+        return False
+    
 class UserAccountStatus(APIView):
     permission_classes = [AllowAny,]
     authentication_classes = []
     def post(self, request, format=None):
         email = request.data['email']
-        user = UserAccount.objects.get(email=email)
-        if user is None:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-        else:
-            # return entire user obj as json
-            serializer = UserAccountSerializer(user)
-            return Response(serializer.data)
+        if email is not None:
+            if checkIfUserExists(email):
+                return Response({'status': 'user'}, status=status.HTTP_200_OK)
+            elif checkIfRegistrantExists(email):
+                return Response({'status': 'registrant'}, status=status.HTTP_200_OK)
+            else:
+                return Response({'status': 'none'}, status=status.HTTP_200_OK)
+
+                

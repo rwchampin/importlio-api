@@ -7,14 +7,16 @@ from django.contrib.auth.models import (
 )
 from django.utils import timezone
 memberships = (
-    ('subcriber', 'Subscriber'),
-    ('trial', 'Trial'),
-    ('basic', 'Basic'),
-    ('premium', 'Premium'),
-    ('enterprise', 'Enterprise')
+    ('SUBSCRIBER', 'Subscriber'),
+    ('TRIAL', 'Trial'),
+    ('BASIC', 'Basic'),
+    ('PRO', 'Pro'),
+    ('ENTERPRISE', 'Enterprise'),
+    ('ADMIN', 'Admin'),
 )
 
 TRIAL_MEMBERSHIP_DURATION = 14
+
 
 
 
@@ -49,7 +51,7 @@ class UserAccountManager(BaseUserManager):
 
         return user
 
-
+    
 class UserAccount(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(max_length=255, null=True, blank=True)
     last_name = models.CharField(max_length=255, null=True, blank=True)
@@ -57,7 +59,7 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
-
+    password = models.CharField(max_length=255, null=True, blank=True)
     amazon_associate_id = models.CharField(max_length=255, null=True, blank=True)
     
     # Contact Details
@@ -77,7 +79,7 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
     
     # Account Details
     account_active = models.BooleanField(default=True)
-    account_type = models.CharField(max_length=255, choices=memberships, blank=True, null=True)
+    account_type = models.CharField(max_length=255, choices=memberships, default=memberships[0][0])
     account_created = models.DateTimeField(auto_now_add=True)
     account_updated = models.DateTimeField(auto_now=True)
 
@@ -85,6 +87,7 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name']
+    
     
     def trial_days_remaining(self):
         if self.account_type == 'trial':
@@ -101,6 +104,5 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
                 self.account_active = False
                 self.save()
 
-        
     def __str__(self):
         return self.email
