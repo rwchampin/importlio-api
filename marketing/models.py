@@ -70,9 +70,14 @@ class MarketingList(AutoSlugMixin, models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     level = models.CharField(max_length=1, choices=list_level_TYPES, default='1')
-    emails = models.ManyToManyField(Email, related_name='marketing_list_emails', blank=True, null=True)
+    emails = models.ManyToManyField(Email, related_name='marketing_list_emails', blank=True)
     type = models.ForeignKey(ListType, related_name='type', on_delete=models.SET_NULL, null=True, blank=True)
-    tags = models.ManyToManyField(Tag, related_name='tags', blank=True, null=True)
+    tags = models.ManyToManyField(Tag, related_name='tags', blank=True)
+    # downloaded_by = models.ManyToManyField(UserAccount, related_name='downloaded_by', blank=True)
+    downloaded_by = models.CharField(max_length=255, blank=True, null=True)
+    created_by = models.CharField(max_length=255, blank=True, null=True)
+    is_populating = models.BooleanField(default=False, blank=True, null=True)
+    limit = models.IntegerField(default=0, blank=True, null=True)
     
     def __str__(self):
         return self.name

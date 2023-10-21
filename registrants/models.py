@@ -2,7 +2,7 @@ from django.db import models
 
 # Create your models here.
 class Registrant(models.Model):
-    email = models.EmailField(unique=True, error_messages={'blank': 'Email is required', 'unique': 'Email already exists'})
+    email = models.EmailField(error_messages={'blank': 'Email is required', 'unique': 'Email already exists'})
     first_name = models.CharField(max_length=50, blank=True, null=True)
     last_name = models.CharField(max_length=50, blank=True, null=True)
     # created = models.DateTimeField(auto_now_add=True)

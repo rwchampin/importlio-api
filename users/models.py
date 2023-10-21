@@ -5,6 +5,7 @@ from django.contrib.auth.models import (
     AbstractBaseUser,
     PermissionsMixin
 )
+from marketing.models import MarketingList
 from django.utils import timezone
 memberships = (
     ('SUBSCRIBER', 'Subscriber'),
@@ -22,6 +23,7 @@ TRIAL_MEMBERSHIP_DURATION = 14
 
 class UserAccountManager(BaseUserManager):
     def create_user(self, email, password=None, **kwargs):
+        import pdb; pdb.set_trace()
         if not email:
             raise ValueError('Users must have an email address')
 
@@ -33,7 +35,9 @@ class UserAccountManager(BaseUserManager):
             **kwargs
         )
 
-        user.set_password(password)
+        if password is not None:
+            user.set_password(password)
+            
         user.save(using=self._db)
 
         return user
@@ -83,6 +87,8 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
     account_created = models.DateTimeField(auto_now_add=True)
     account_updated = models.DateTimeField(auto_now=True)
 
+    
+    # email lists
     objects = UserAccountManager()
 
     USERNAME_FIELD = 'email'
@@ -103,6 +109,10 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
             if self.account_created + datetime.timedelta(days=TRIAL_MEMBERSHIP_DURATION) <= datetime.now():
                 self.account_active = False
                 self.save()
-
+                
+    def email_lists_downloaded(self):
+        lists = MarketingList.objects.filter(downloaded_by=self)
+        return lists.count()
+    
     def __str__(self):
         return self.email

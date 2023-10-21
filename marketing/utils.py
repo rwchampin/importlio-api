@@ -13,7 +13,9 @@ import re
 chrome_driver_location = '/opt/homebrew/bin/chromedriver'
 search_key = 'AIzaSyBXVuHN8e_8ZytTu9SwqcuRyiOIelHYXhA'
 
-
+username = "geonode_y52krAfiwj-country-US"
+password = "685d0e68-e072-473e-86c0-beae004f73e3"
+GEONODE_DNS = "rotating-residential.geonode.com:9000"
 
 
 # Function to remove HTML tags from a string
@@ -29,8 +31,43 @@ def extract_emails(text):
     import pdb; pdb.set_trace()
     return emails
 
-def scrape_google_search(url, max_results=-1):
+
+def get_proxy():
+    return {"http":"http://{}:{}@{}".format(username, password, GEONODE_DNS)}
+
+def scrape_google_search():
+    page = 0
+    results_per_page = 100
     
+    
+    
+    url = "https://www.google.com/search?q=+%22fitness+instructor%22%20AND%20%22%40gmail.com%22%20-intitle:%22profiles%22%20-inurl:%22dir/+%22+site:www.linkedin.com/in/+OR+site:www.linkedin.com/pub/&start={}&num={}".format(page, results_per_page)   
+    PROXY = get_proxy()
+    
+    # add proxy to requests
+    response = requests.get(url, proxies=PROXY)
+    
+    if(response.status_code == 200):
+        # make soup
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # get body html
+        body = soup.find("body").text
+        
+        # find the html elements with the text "linkedin.com"
+        linkedin_elements = soup.find_all(text=re.compile("linkedin.com"))
+        
+        # get a count of the number of linkedin elements
+        linkedin_element_count = len(linkedin_elements)
+        
+        # print and return the count
+        print(linkedin_element_count)
+
+        return body
+        
+    else:
+        print("Error:", response.status_code)
+        return None
     
     
     # add proxy to selenium

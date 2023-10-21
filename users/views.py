@@ -12,7 +12,6 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView
 )
 from .models import UserAccount
-from registrants.models import Registrant
 from rest_framework.permissions import AllowAny
 from .serializers import UserAccountSerializer
 
@@ -128,59 +127,12 @@ class UserAccountViewSet(viewsets.ModelViewSet):
     serializer_class = UserAccountSerializer
     authentication_classes = []
     permission_classes = []
-
-    def create(self, request, *args, **kwargs):
-        # call UserAccount Model create_user method to make new user
-        serializer = UserAccountSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
-    
-    
-# class CreateUserAccount(CreateAPIView):
-#     queryset = UserAccount.objects.all()
-#     serializer_class = UserAccountSerializer
-#     permission_classes = [AllowAny,]
-#     authentication_classes = [AllowAny,]
-    
-#     def create(self, request, *args, **kwargs):
-#         import pdb; pdb.set_trace()
-#         # call UserAccount Model create_user method to make new user
-#         serializer = UserAccountSerializer(data=request.data)
-#         serializer.is_valid(raise_exception=True)
-#         serializer.save()
-#         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
-
+    lookup_field = 'email'
+   
+ 
+ 
+ 
 
     
 
-def checkIfUserExists(email):
-    try:
-        user = UserAccount.objects.get(email=email)
-        return True
-    except UserAccount.DoesNotExist:
-        return False
-    
-def checkIfRegistrantExists(email):
-    try:
-        registrant = Registrant.objects.get(email=email)
-        return True
-    except Registrant.DoesNotExist:
-        return False
-    
-class UserAccountStatus(APIView):
-    permission_classes = [AllowAny,]
-    authentication_classes = []
-    def post(self, request, format=None):
-        email = request.data['email']
-        if email is not None:
-            if checkIfUserExists(email):
-                return Response({'status': 'user'}, status=status.HTTP_200_OK)
-            elif checkIfRegistrantExists(email):
-                return Response({'status': 'registrant'}, status=status.HTTP_200_OK)
-            else:
-                return Response({'status': 'none'}, status=status.HTTP_200_OK)
-
-                
+ 

@@ -57,13 +57,12 @@ INSTALLED_APPS = [
     "users",
     "posts",
     "drf_yasg",
-    "registrants",
     "proxies",
     "products",
     'customers',
     'openai',
     'marketing',
-    "subscribers"
+    "subscribers",
 ]
 
 MIDDLEWARE = [
@@ -103,6 +102,16 @@ WSGI_APPLICATION = "importlio.wsgi.application"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 if DEVELOPMENT_MODE is True:
+    # sqllite database for development
+    # DATABASES = {
+    #     "default": {
+    #         "ENGINE": "django.db.backends.sqlite3",
+    #         "NAME": BASE_DIR / "db.sqlite3",
+    #         "TEST": {
+    #             "NAME": BASE_DIR / "test_db.sqlite3",
+    #         },
+    #     }
+    # }
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.mysql",
@@ -197,6 +206,10 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 REST_FRAMEWORK = {
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '10/minute',
+        'user': '10/minute'
+    },
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "users.authentication.CustomJWTAuthentication",
     ],
@@ -217,7 +230,7 @@ DJOSER = {
     "SERIALIZERS": {
         'user': 'users.serializers.UserAccountSerializer',
         'current_user': 'users.serializers.UserAccountSerializer',
-        'user_create': 'users.serializers.UserAccountCreateSerializer',
+        # 'user_create': 'users.serializers.UserAccountCreateSerializer',
     }
 }
 

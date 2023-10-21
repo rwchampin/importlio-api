@@ -13,7 +13,7 @@ from .serializers import (
     CategorySerializer, 
     PostTypeSerializer, 
     PostCreateSerializer,
-    PostTopicIdeasSerializer
+    PostTopicIdeasSerializer,
 )
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -78,21 +78,21 @@ class PostsByTagView(generics.ListAPIView):
 
     def get_queryset(self):
         tag_slug = self.kwargs['tag']
-        return Post.objects.filter(tags__slug=tag_slug)
+        return Post.objects.filter(tags__slug=tag_slug).order_by('-updated')
 
 class PostsByCategoryView(generics.ListAPIView):
     serializer_class = PostSerializer
     permission_classes = [AllowAny]  # Make this view public
     def get_queryset(self):
         category = self.kwargs['category']
-        return Post.objects.filter(categories__slug=category)
+        return Post.objects.filter(categories__slug=category).order_by('-updated')
     
 class PostsByPostTypeView(generics.ListAPIView):
     serializer_class = PostSerializer
     permission_classes = [AllowAny]  # Make this view public
     def get_queryset(self):
         post_type_slug = self.kwargs['post_type']
-        return Post.objects.filter(post_type__slug=post_type_slug)
+        return Post.objects.filter(post_type__slug=post_type_slug).order_by('-updated')
 
 class RecentPostsView(generics.ListAPIView):
     serializer_class = PostSerializer
@@ -105,7 +105,7 @@ class PostsByDate(generics.ListAPIView):
     permission_classes = [AllowAny]  # Make this view public
     def get_queryset(self):
         date = self.kwargs['date']
-        return Post.objects.filter(published__year=date.year, published__month=date.month, published__day=date.day)
+        return Post.objects.filter(published__year=date.year, published__month=date.month, published__day=date.day).order_by('-updated')
     
 class PostTopicIdeasViewSet(viewsets.ModelViewSet):
     serializer_class = PostTopicIdeasSerializer

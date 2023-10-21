@@ -55,6 +55,7 @@ class TagSerializer(serializers.ModelSerializer):
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
+        depth = 1
         fields = '__all__'
 
 class PostTypeSerializer(serializers.ModelSerializer):
@@ -85,16 +86,27 @@ class PostSerializer(serializers.ModelSerializer):
     featured_image = Base64ImageField(
         max_length=None, use_url=True, required=False
     )
+    # mobile_image = Base64ImageField(
+    #     max_length=None, use_url=True, required=False
+    # )
+    # tablet_image = Base64ImageField(
+    #     max_length=None, use_url=True, required=False
+    # )
+    # desktop_image = Base64ImageField(
+    #     max_length=None, use_url=True, required=False
+    # )
+    
     
 
     class Meta:
         model = Post
-        fields = [
-            'id', 'title', 'content', 'tags', 'categories', 'slug', 'read_time',  'updated', 'headline', 'published',
-            'post_type', 'featured_image', 'excerpt', 'subtitle', 'seo_title', 'seo_description', 'shadowText', 'shadow_text_theme', "title_text_theme", "subtitle_text_theme", "headline_text_theme",
-            "updated_pretty", "published_pretty", "seo_keywords"
-            # Add other fields as needed
-        ]
+        fields = '__all__'
+        # fields = [
+        #     'id', 'title', 'content', 'tags', 'categories', 'slug', 'read_time',  'updated', 'headline', 'published', 'word_count',
+        #     'post_type', 'excerpt', 'subtitle', 'seo_title', 'seo_description', 'shadowText', 'shadow_text_theme', "title_text_theme", "subtitle_text_theme", "headline_text_theme",
+        #     "updated_pretty", "published_pretty", "seo_keywords", 'tablet_image', 'desktop_image', 'mobile_image', 'featured_image'
+        #     # Add other fields as needed
+        # ]
 
 
 class UpdatePostSerializer(serializers.ModelSerializer):
@@ -108,3 +120,5 @@ class PostTopicIdeasSerializer(serializers.ModelSerializer):
     class Meta:
         model = PostTopicIdeas
         fields = '__all__'
+        
+         

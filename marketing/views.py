@@ -171,17 +171,18 @@ def generate_google_query(keywords):
 def get_data(request):
     
     if request.method == 'POST':
-        query_fields = request.data.get('query_fields', None)
-        if query_fields is not None:
-            url = generate_google_query(query_fields)
-            email_json = scrape_google_search(url, -1)
+        query = request.data.get('query', None);
+        limit = request.data.get('limit', -1);
+        if query is not None:
+            # url = generate_google_query(query, limit)
+            email_json = scrape_google_search()
             return JsonResponse({"t": email_json})
         else:
             # throw error
             raise Exception('No query fields provided')
         
         
-        AIzaSyAKA_fLIUE_VQkdD95yg93oADg2vS0Uhcc
+        # AIzaSyAKA_fLIUE_VQkdD95yg93oADg2vS0Uhcc
         
 @api_view(['POST'])
 def bulk_create_emails(request):
