@@ -98,7 +98,7 @@ class RecentPostsView(generics.ListAPIView):
     serializer_class = PostSerializer
     permission_classes = [AllowAny]  # Make this view public
     def get_queryset(self):
-        return Post.objects.filter(published__lte=timezone.now()).order_by('-updated')[:6]
+        return Post.objects.filter(published__lte=timezone.now()).order_by('-updated')[:3]
     
 class PostsByDate(generics.ListAPIView):
     serializer_class = PostSerializer

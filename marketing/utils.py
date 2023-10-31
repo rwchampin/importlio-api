@@ -1,21 +1,13 @@
 import requests
 from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 
 
 import json
 import time, random
 import re
-chrome_driver_location = '/opt/homebrew/bin/chromedriver'
-search_key = 'AIzaSyBXVuHN8e_8ZytTu9SwqcuRyiOIelHYXhA'
 
-username = "geonode_y52krAfiwj-country-US"
-password = "685d0e68-e072-473e-86c0-beae004f73e3"
-GEONODE_DNS = "rotating-residential.geonode.com:9000"
+
+
 
 
 # Function to remove HTML tags from a string
@@ -32,16 +24,14 @@ def extract_emails(text):
     return emails
 
 
-def get_proxy():
-    return {"http":"http://{}:{}@{}".format(username, password, GEONODE_DNS)}
 
 def scrape_google_search():
     page = 0
     results_per_page = 100
     
     
-    
-    url = "https://www.google.com/search?q=+%22fitness+instructor%22%20AND%20%22%40gmail.com%22%20-intitle:%22profiles%22%20-inurl:%22dir/+%22+site:www.linkedin.com/in/+OR+site:www.linkedin.com/pub/&start={}&num={}".format(page, results_per_page)   
+    url = "https://www.amazon.com/Amazon-Essentials-Lightweight-Water-Resistant-Packable/dp/B07BN72SZ5?ref_=Oct_DLandingS_D_2af93ef5_1"
+    # url = "https://www.google.com/search?q=+%22fitness+instructor%22%20AND%20%22%40gmail.com%22%20-intitle:%22profiles%22%20-inurl:%22dir/+%22+site:www.linkedin.com/in/+OR+site:www.linkedin.com/pub/&start={}&num={}".format(page, results_per_page)   
     PROXY = get_proxy()
     
     # add proxy to requests
@@ -70,12 +60,7 @@ def scrape_google_search():
         return None
     
     
-    # add proxy to selenium
-    # proxy = '19.33.33.33'
-    # chrome_options = webdriver.ChromeOptions()
-    # chrome_options.add_argument('--proxy-server=%s' % proxy)
     
-    driver = webdriver.Chrome(chrome_driver_location)
     if url is None:
         url = "https://www.google.com/search?q=+%22fitness+instructor%22%20AND%20%22%40gmail.com%22%20-intitle:%22profiles%22%20-inurl:%22dir/+%22+site:www.linkedin.com/in/+OR+site:www.linkedin.com/pub/"
     try:

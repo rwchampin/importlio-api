@@ -1,8 +1,4 @@
 from django.db import models
-
-# Create your models here.
-from django.db import models
-
 class Product(models.Model):
     url = models.URLField(unique=True)
     title = models.CharField(max_length=255)
@@ -12,3 +8,6 @@ class Product(models.Model):
     images = models.JSONField()
     availability = models.BooleanField()
     variants = models.JSONField()
+    search_url = models.URLField()
+    img = models.ImageField(upload_to='images/', null=True, blank=True)
+    rating = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)

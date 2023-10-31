@@ -20,6 +20,7 @@ urlpatterns = [
         CustomProviderAuthView.as_view(),
         name='provider-auth'
     ),
+    # path('send-admin-email/', send_admin_notification.as_view()),
     # path('auth/users-email/<str:email>/', UserAccountViewSet.as_view({'get': 'retrieve'})),
     path('jwt/create/', CustomTokenObtainPairView.as_view()),
     path('jwt/refresh/', CustomTokenRefreshView.as_view()),

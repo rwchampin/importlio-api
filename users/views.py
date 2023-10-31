@@ -2,10 +2,11 @@ from django.conf import settings
 from rest_framework.views import APIView, Response, status
 from rest_framework.generics import ListAPIView, CreateAPIView, RetrieveAPIView, UpdateAPIView, DestroyAPIView
 from rest_framework import viewsets
-
 from rest_framework.response import Response
 from rest_framework import status
 from djoser.social.views import ProviderAuthView
+from rest_framework.decorators import api_view
+
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -40,7 +41,6 @@ class CustomProviderAuthView(ProviderAuthView):
                 httponly=settings.AUTH_COOKIE_HTTP_ONLY,
                 samesite=settings.AUTH_COOKIE_SAMESITE
             )
-            response['user'] = 'test'
         return response
 
 
@@ -128,11 +128,9 @@ class UserAccountViewSet(viewsets.ModelViewSet):
     authentication_classes = []
     permission_classes = []
     lookup_field = 'email'
-   
- 
- 
- 
+    
 
+ 
     
 
  

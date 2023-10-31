@@ -23,7 +23,6 @@ TRIAL_MEMBERSHIP_DURATION = 14
 
 class UserAccountManager(BaseUserManager):
     def create_user(self, email, password=None, **kwargs):
-        import pdb; pdb.set_trace()
         if not email:
             raise ValueError('Users must have an email address')
 
@@ -82,7 +81,6 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
     
     
     # Account Details
-    account_active = models.BooleanField(default=True)
     account_type = models.CharField(max_length=255, choices=memberships, default=memberships[0][0])
     account_created = models.DateTimeField(auto_now_add=True)
     account_updated = models.DateTimeField(auto_now=True)
