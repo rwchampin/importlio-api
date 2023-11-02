@@ -60,7 +60,6 @@ INSTALLED_APPS = [
     "proxies",
     "products",
     'customers',
-    'openai',
     'marketing',
     "subscribers",
 ]

@@ -1,5 +1,6 @@
 from django.db import models
 class Product(models.Model):
+    asin = models.CharField(max_length=255, unique=True)
     url = models.URLField(unique=True)
     title = models.CharField(max_length=255)
     description = models.TextField()
@@ -11,3 +12,9 @@ class Product(models.Model):
     search_url = models.URLField()
     img = models.ImageField(upload_to='images/', null=True, blank=True)
     rating = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+    info_from_manufacturer = models.TextField(null=True, blank=True)
+    similar_products = models.JSONField(null=True, blank=True)
+    whats_in_the_box = models.TextField(null=True, blank=True)
+    videos = models.JSONField(null=True, blank=True)
+    technical_details = models.JSONField(null=True, blank=True)

@@ -3,12 +3,15 @@ from rest_framework.response import Response
 from .models import Product
 from .serializers import ScrapeURLSerializer, ProductSerializer
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Comment
 from .utils import extract_product_info
 from rest_framework.decorators import api_view
 from utils.scraping.get_proxy import get_proxy
 from selectorlib import Extractor
+
 from .proxy import ProxyManager
+import os
+import openai
 
 proxy_manager = ProxyManager()
 
@@ -83,9 +86,9 @@ def scrape(url):
 
     # Download the page using requests
     print("Downloading %s"%url)
-    print("Proxy used:", proxy)
+    # print("Proxy used:", proxy)
     
-    r = requests.get(url, headers=headers, proxies=proxy)
+    r = requests.get(url, headers=headers)
     # Simple check to check if page was blocked (Usually 503)
     if r.status_code > 500:
         if "To discuss automated access to Amazon data please contact" in r.text:
@@ -99,12 +102,97 @@ def scrape(url):
 
 @api_view(['POST'])
 def get_data(request):      
+    # Create an Extractor by reading from the YAML file
+    path_to_yaml = os.path.join(os.path.dirname(__file__), 'search_results.yml')
+    e = Extractor.from_yaml_file(path_to_yaml)
+    # get the url from the request
+    url = 'https://www.amazon.com/s?k=new-releases/baby-products'
     
-    url = request.data['url']
+    # get the html from the url
+    html = scrape(url)
     
-    res = scrape(url)
+    # get data from the html
+    data = e.extract(html.text)
+    
+    return Response(data, status=status.HTTP_200_OK)
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+# def old:
+#     # remove all comments from the HTML
+#     comments = body.findAll(text=lambda text:isinstance(text, Comment))
+#     [comment.extract() for comment in comments]
+    
+#     # remove all <script> tags, <noscript> tags, and <style> tags
+#     for script_tag in body.find_all('script'):
+#         script_tag.extract()
+        
+#     for noscript_tag in body.find_all('noscript'):
+#         noscript_tag.extract()
+        
+#     for style_tag in body.find_all('style'):
+#         style_tag.extract()
+        
+#     # remove all html elements with the word 'nav' in the id or class attribute
+#     nav_elements = body.find_all(lambda tag: any('nav' in attr for attr in tag.attrs))
+#     for nav_element in nav_elements:
+#         nav_element.extract()
+        
+#     openai.api_key = "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"
+#     instructions = 'I am going to send you multiple HTML strings to parse.  I will tell you when i am done.  You will say `received, waiting for more.` to acknowledge you have received. you will not do anything but receive data until i say `i am done`.  you will then ask me for instructions as to what you need to do to the data given when i am done sending. are you ready?'
+    
+#     # add the instructions to the messages list
+#     messages.append({'role': 'user', 'content': instructions})
+#     # send instructions to ai
+#     chat_completion = openai.ChatCompletion.create(
+#         model="gpt-3.5-turbo",
+#         messages=messages,
+#     )
 
-    soup = BeautifulSoup(res.content, 'html.parser')
+#     # add the response to the messages list
+#     messages.append({'role': 'assistant', 'content': chat_completion.choices[0].message.content})
+#     #send the remaining string to the AI to parse
+#     # split the msg up into 4000 character chunks
+
+#     body = body.text.split()
+#     msg_chunks = []
+#     msg_chunk = ''
+#     for word in body:
+#         if len(msg_chunk) < 4000:
+#             msg_chunk = msg_chunk + ' ' + word
+#         else:
+#             msg_chunks.append(msg_chunk)
+#             msg_chunk = ''
+#     msg_chunks.append(msg_chunk)
     
+#     for msg_chunk in msg_chunks:
+#         # send the msg chunk to the AI and add to the messages list
+#         messages.append({'role': 'user', 'content': msg_chunk})
+#         chat_completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=messages)
+#         messages.append({'role': 'assistant', 'content': chat_completion.choices[0].message.content})
+#         print(messages)
+#     # send the final instructions to the AI
+#     instructions = 'I am done sending you the HTML strings. The HTML given is of a ecommerce product page. You will parse the html I gave you in the previous messages.  Please parse the HTML I have previously provided and return to me an array of objects that represent each product you find. Each product should have a title, price, rating, review count, a list of urls for the pictures related to each product, and any other information you see fit.  Please return the array of objects as a JSON string.'
+#     # add the instructions to the messages list
+#     messages.append({'role': 'user', 'content': instructions})
+#     chat_completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=messages)
+#     messages.append({'role': 'assistant', 'content': chat_completion.choices[0].message.content})
     
-    return Response({'html': res.text })
+#     # send the final instructions to the AI
+#     instructions = 'yes please send me the parsed product data in json format'
+#     # add the instructions to the messages list
+#     messages.append({'role': 'user', 'content': instructions})
+#     chat_completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=messages)
+#     messages.append({'role': 'assistant', 'content': chat_completion.choices[0].message.content})
+#     print(messages)
+#     print(chat_completion.choices[0].message.content)
+#     return Response({'data': messages}, status=status.HTTP_200_OK)
