@@ -84,7 +84,7 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
     account_type = models.CharField(max_length=255, choices=memberships, default=memberships[0][0])
     account_created = models.DateTimeField(auto_now_add=True)
     account_updated = models.DateTimeField(auto_now=True)
-
+    account_active = models.BooleanField(default=True)
     
     # email lists
     objects = UserAccountManager()
