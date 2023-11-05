@@ -100,7 +100,7 @@ WSGI_APPLICATION = "importlio.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-if DEVELOPMENT_MODE is True:
+# if DEVELOPMENT_MODE is True:
     # sqllite database for development
     # DATABASES = {
     #     "default": {
@@ -111,22 +111,22 @@ if DEVELOPMENT_MODE is True:
     #         },
     #     }
     # }
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.mysql",
-            "HOST": "importlio-prod-do-user-14345350-0.b.db.ondigitalocean.com",
-            "PORT": "25060",
-            "NAME": "defaultdb",
-            "USER": "doadmin",
-            "PASSWORD": "AVNS_3snn9HVBKWJlhgExj2g",
-        }
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.mysql",
+        "HOST": "importlio-prod-do-user-14345350-0.b.db.ondigitalocean.com",
+        "PORT": "25060",
+        "NAME": "defaultdb",
+        "USER": "doadmin",
+        "PASSWORD": "AVNS_3snn9HVBKWJlhgExj2g",
     }
-elif len(sys.argv) > 0 and sys.argv[1] != "collectstatic":
-    if getenv("DATABASE_URL", None) is None:
-        raise Exception("DATABASE_URL environment variable not defined")
-    DATABASES = {
-        "default": dj_database_url.parse(getenv("DATABASE_URL")),
-    }
+}
+# elif len(sys.argv) > 0 and sys.argv[1] != "collectstatic":
+#     if getenv("DATABASE_URL", None) is None:
+#         raise Exception("DATABASE_URL environment variable not defined")
+#     DATABASES = {
+#         "default": dj_database_url.parse(getenv("DATABASE_URL")),
+#     }
 
 # Email settings
 
@@ -149,7 +149,7 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = 'support@importlio.com'
 DOMAIN = getenv("DOMAIN")
-SITE_NAME = "Full Auth"
+SITE_NAME = "Importlio"
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -246,7 +246,7 @@ AUTH_COOKIE_MAX_AGE = 60 * 60 * 24
 AUTH_COOKIE_SECURE = getenv("AUTH_COOKIE_SECURE", "True") == "True"
 AUTH_COOKIE_HTTP_ONLY = True
 AUTH_COOKIE_PATH = "/"
-AUTH_COOKIE_SAMESITE = "Lax"
+AUTH_COOKIE_SAMESITE = "None"
 
 
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = getenv("GOOGLE_AUTH_KEY")

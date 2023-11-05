@@ -247,7 +247,7 @@ class Post(models.Model):
     seo_title = models.CharField(max_length=400, blank=True, null=True)
     seo_description = models.TextField(blank=True, null=True)
     seo_keywords = models.TextField(blank=True, null=True)
-
+    
     # styles for the post
     shadow_text_theme = models.CharField(max_length=20, choices=POST_THEME, default='light')
     title_text_theme = models.CharField(max_length=20, choices=POST_THEME, default='light')
