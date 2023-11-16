@@ -1,14 +1,15 @@
-from rest_framework import viewsets, generics
+from rest_framework import viewsets, generics, status
 from rest_framework.permissions import AllowAny
 from .models import Email, MarketingList, MarketingStatistic
 from .serializers import EmailSerializer, PreviewMarketingListSerializer, MarketingListSerializer
 from rest_framework.decorators import api_view
 from django.http import JsonResponse, HttpResponse
-import csv
-
-# Create your views here.
-from .utils import scrape_google_search, get_google_search_results
-
+import csv, re, random, time, os, requests
+from rest_framework.response import Response
+from bs4 import BeautifulSoup
+from django.template.loader import get_template
+from django.core.mail import EmailMultiAlternatives, send_mass_mail, send_mail
+from django.template.loader import render_to_string
 
 class EmailViewSet(viewsets.ModelViewSet):
     queryset = Email.objects.all()
@@ -154,12 +155,13 @@ class MarketingListViewSet(viewsets.ModelViewSet):
 #     for niche in niches:
 #         Niche.objects.create(name=niche)
 
-def generate_google_query(keywords):
+def generate_google_query(keywords,start):
     # Prepare the base Google search URL
-    base_url = "http://www.google.com/search?q="
+    base_url = f"http://www.google.com/search?num=100&start={start}&q=+"
     
     # Create the query by joining keywords with " AND " and adding other conditions
     query = " AND ".join(keywords)
+    print(query)
     query = f'"{query}" AND "%40gmail.com" -intitle:"profiles" -inurl:"dir/+"+site:www.linkedin.com/in/+OR+site:www.linkedin.com/pub/'
     
     # Combine the base URL with the query
@@ -167,22 +169,7 @@ def generate_google_query(keywords):
     
     return search_url
 
-@api_view(['POST'])
-def get_data(request):
-    
-    if request.method == 'POST':
-        query = request.data.get('query', None);
-        limit = request.data.get('limit', -1);
-        if query is not None:
-            # url = generate_google_query(query, limit)
-            email_json = scrape_google_search()
-            return JsonResponse({"t": email_json})
-        else:
-            # throw error
-            raise Exception('No query fields provided')
-        
-        
-        # AIzaSyAKA_fLIUE_VQkdD95yg93oADg2vS0Uhcc
+ 
         
 @api_view(['POST'])
 def bulk_create_emails(request):
@@ -321,3 +308,226 @@ def bulk_create_emails(request):
 
 # Call the function to populate the statistics
 # populate_statistics()
+
+
+
+ 
+
+
+
+# Create an Extractor by reading from the YAML file
+# e = Extractor.from_yaml_file('selectors.yml')
+
+# from .utils import get_title, get_description, get_price, get_reviews, get_images, get_availability, get_variants
+class ScrapeAmazonViewSet(viewsets.ViewSet):
+    http_method_names = ['post']
+    authentication_classes = []
+    permission_classes = []
+    
+    # def create(self, request):
+    #     headers = ({'User-Agent':
+    #     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.157 Safari/537.36',
+    #     'Accept-Language': 'en-US, en;q=0.5'})
+    #     response = requests.get('https://www.amazon.com/s?k=laptops&crid=1BKE05LZEL0B2&sprefix=laptops%2Caps%2C87&ref=nb_sb_noss_1', headers=headers)
+    #     import pdb; pdb.set_trace()
+        # if response.status_code == 200:
+            # product_list = extract_product_info(response.content)
+            # import pdb; pdb.set_trace()
+            # soup = BeautifulSoup(response.content, "lxml")
+            # title = get_title(soup)
+            # description = get_description(soup)
+            # price = get_price(soup)
+            # reviews = get_reviews(soup)
+            # images = get_images(soup)
+            # return Response(product_list, status=status.HTTP_200_OK)
+            # Save to database
+            # product = Product.objects.create(
+            #     url=url,
+            #     title=title,
+            #     description=description,
+            #     price=price,
+            #     reviews=reviews,
+            #     images=images,
+            #     availability=availability,
+            #     variants=variants
+            # )
+            # product_serializer = ProductSerializer(product)
+            # return Response(product_serializer.data, status=status.HTTP_201_CREATED)
+        # else:
+        #     return Response({'error': 'Failed to retrieve the page.'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+# fn that loops over all div and finds the ones with the most classes 
+
+
+def checkForError(r):
+    soup = BeautifulSoup(r.content, 'html.parser')
+    
+    # check if #recaptcha exists
+    recaptcha = soup.find(id='recaptcha')
+    
+    if recaptcha is not None:
+        raise Exception('Recaptcha found')
+    
+ 
+
+def scrape(url):  
+
+    headers = {
+        'dnt': '1',
+        'upgrade-insecure-requests': '1',
+        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36',
+        'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+        'sec-fetch-site': 'same-origin',
+        'sec-fetch-mode': 'navigate',
+        'sec-fetch-user': '?1',
+        'sec-fetch-dest': 'document',
+        'referer': 'https://www.amazon.com/',
+        'accept-language': 'en-GB,en-US;q=0.9,en;q=0.8',
+    }
+
+    # Download the page using requests
+    print("Downloading %s"%url)
+
+    proxy = {
+        'http': 'socks5://103.95.197.233:9050',
+        'https': 'socks5://103.95.197.233:9050',
+    }
+    r = requests.get(url, headers=headers, proxies=proxy)
+    # Simple check to check if page was blocked (Usually 503)
+    # Pass the HTML of the page and create 
+    print(r.content)
+    return r.content
+
+
+ 
+    
+@api_view(['POST'])
+def get_emails(request):   
+     
+    savedEmails = []   
+    # Create an Extractor by reading from the YAML file
+    keywords = request.data.get('keywords', None)
+    chosenList = request.data.get('list', None)
+    
+    if chosenList is not None:
+        chosenList = MarketingList.objects.get(id=chosenList)
+    else:
+        chosenList = MarketingList.objects.create(name=f'untitled list{random.randint(1, 100)}')
+        
+    if keywords is None:
+        raise Exception('No keywords provided')
+    
+    
+    emails = []
+
+    run = True
+    start = 0
+    
+    while run and start < 300:
+        url = generate_google_query(keywords, start)
+        # get the html from the url
+        res = scrape(url)
+        
+        if res is None:
+            run = False
+        else:
+            emailsJson = extract_email_addresses(res)
+            emails.extend(emailsJson)
+            # increment the start by 100
+            start += 100
+            # pause random time between 5 and 10 seconds
+            time.sleep(random.randint(1, 5))
+    # get text from the html
+    if len(emails) > 0:
+        emailRes = saveEmails(emails, chosenList)
+        savedEmails.extend(emailRes)
+        
+    # get data from the html
+    # data = e.extract(html.text)
+
+    return Response({ emails: emails}, status=status.HTTP_200_OK)
+        
+
+def saveEmails(emails, chosenList):
+    savedEmails = []
+
+    for email in emails:
+        try:
+            savedEmail = Email.objects.create(email=email, marketing_list=chosenList)
+            savedEmails.append(savedEmail)
+        except:
+            raise Exception('Error saving emails')
+        
+    return savedEmails
+        
+# fn to return email addresses from a string
+def extract_email_addresses(html_content):
+    email_addresses = set()  # Using a set to avoid duplicates
+    # Create a BeautifulSoup object
+    soup = BeautifulSoup(html_content, 'html.parser')
+    # loop over the html content
+
+    # Use regular expressions to find email addresses
+    email_pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}'
+    email_regex = re.compile(email_pattern)
+
+    # Find all text in the HTML, including text within <em> tags
+    text = ''.join(soup.stripped_strings)
+
+    # Search for email addresses and add them to the set
+    for match in email_regex.finditer(text):
+        email_addresses.add(match.group())
+
+    print(email_addresses)
+    return list(email_addresses)
+        
+        # "<!doctype html><html itemscope=\"\" itemtype=\"http://schema.
+        
+        
+        
+@api_view(['POST'])
+def save_emails(request):
+    emails = request.data.get('emails', None)
+    marketing_list = MarketingList.objects.get(id="1")
+
+    try:
+        for email in emails:
+            email_obj, created = Email.objects.get_or_create(email=email)
+            marketing_list.emails.add(email_obj)
+    except:
+        raise Exception('Error saving emails')
+        
+    return Response({'emails': emails}, status=status.HTTP_200_OK)
+
+
+
+
+@api_view(['GET'])
+def send_email_mass(request):
+    marketing_list = MarketingList.objects.get(id="3")
+    emails = marketing_list.emails.all()
+
+    emails = [email.email for email in emails]
+    
+    subj = "Shopify Store Owners - Shopify Email Marketing Launch!"
+    fromEmail = "support@importlio.com"
+    body = render_to_string('promo.html', {'marketing_list': marketing_list})
+    send_mail(
+        subj,
+        body,
+        fromEmail,
+        ["rwchampin@gmail.com"],
+        html_message=body,
+        fail_silently=False,
+    )
+    # try:
+
+    #     send_mass_mail(
+    #         ('subject', body, fromEmail, emails)
+    #     )
+    # except:
+    #     raise Exception('Error saving emails')
+        
+    return Response({'emails': emails}, status=status.HTTP_200_OK)

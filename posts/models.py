@@ -279,41 +279,41 @@ class Post(models.Model):
             
         
         # Create thumbnail and tablet images
-        if self.featured_image:
-            original_image = Image.open(self.featured_image)
+        # if self.featured_image:
+        #     original_image = Image.open(self.featured_image)
             
-            # Check if the image format is not JPEG
-            if original_image.format != 'JPEG':
-                # Convert to JPEG
-                byte_array = BytesIO()
-                original_image.convert('RGB').save(byte_array, format='JPEG')
-                self.featured_image.save(
-                    f"{self.slug}.jpg", 
-                    ContentFile(byte_array.getvalue()), 
-                    save=False
-                )
-                original_image = Image.open(self.featured_image.path)  # Re-open the saved jpeg image
+        #     # Check if the image format is not JPEG
+        #     if original_image.format != 'JPEG':
+        #         # Convert to JPEG
+        #         byte_array = BytesIO()
+        #         original_image.convert('RGB').save(byte_array, format='JPEG')
+        #         self.featured_image.save(
+        #             f"{self.slug}.jpg", 
+        #             ContentFile(byte_array.getvalue()), 
+        #             save=False
+        #         )
+        #         original_image = Image.open(self.featured_image.path)  # Re-open the saved jpeg image
 
-            for image_type, size in RESPONSIVE_IMAGE_SIZES:
-                if image_type == 'mobile':
-                    img_field = 'mobile_image'
-                elif image_type == 'tablet':
-                    img_field = 'tablet_image'
-                else:
-                    img_field = 'desktop_image'
+        #     for image_type, size in RESPONSIVE_IMAGE_SIZES:
+        #         if image_type == 'mobile':
+        #             img_field = 'mobile_image'
+        #         elif image_type == 'tablet':
+        #             img_field = 'tablet_image'
+        #         else:
+        #             img_field = 'desktop_image'
                 
-                # Resizing logic
-                aspect_ratio = original_image.width / original_image.height
-                new_height = int(size / aspect_ratio)
-                resized_image = original_image.resize((size, new_height), Image.LANCZOS)
+        #         # Resizing logic
+        #         aspect_ratio = original_image.width / original_image.height
+        #         new_height = int(size / aspect_ratio)
+        #         resized_image = original_image.resize((size, new_height), Image.LANCZOS)
                 
-                # Save the resized images
-                thumb_io = BytesIO()
-                resized_image.save(thumb_io, format='JPEG')
+        #         # Save the resized images
+        #         thumb_io = BytesIO()
+        #         resized_image.save(thumb_io, format='JPEG')
                 
-                thumb_file = ContentFile(thumb_io.getvalue())
-                thumb_filename = f"{self.slug}_{image_type}.jpg"
-                getattr(self, img_field).save(thumb_filename, thumb_file, save=False)
+        #         thumb_file = ContentFile(thumb_io.getvalue())
+        #         thumb_filename = f"{self.slug}_{image_type}.jpg"
+        #         getattr(self, img_field).save(thumb_filename, thumb_file, save=False)
 
         # Save the object because we made changes to the file fields
         super(Post, self).save(*args, **kwargs)

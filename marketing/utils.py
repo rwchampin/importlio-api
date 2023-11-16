@@ -30,12 +30,12 @@ def scrape_google_search():
     results_per_page = 100
     
     
-    url = "https://www.amazon.com/Amazon-Essentials-Lightweight-Water-Resistant-Packable/dp/B07BN72SZ5?ref_=Oct_DLandingS_D_2af93ef5_1"
-    # url = "https://www.google.com/search?q=+%22fitness+instructor%22%20AND%20%22%40gmail.com%22%20-intitle:%22profiles%22%20-inurl:%22dir/+%22+site:www.linkedin.com/in/+OR+site:www.linkedin.com/pub/&start={}&num={}".format(page, results_per_page)   
-    PROXY = get_proxy()
+    # url = "https://www.amazon.com/Amazon-Essentials-Lightweight-Water-Resistant-Packable/dp/B07BN72SZ5?ref_=Oct_DLandingS_D_2af93ef5_1"
+    url = "https://www.google.com/search?q=+%22fitness+instructor%22%20AND%20%22%40gmail.com%22%20-intitle:%22profiles%22%20-inurl:%22dir/+%22+site:www.linkedin.com/in/+OR+site:www.linkedin.com/pub/&start={}&num={}".format(page, results_per_page)   
+    # PROXY = get_proxy()
     
     # add proxy to requests
-    response = requests.get(url, proxies=PROXY)
+    response = requests.get(url)
     
     if(response.status_code == 200):
         # make soup

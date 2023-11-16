@@ -2,7 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from .models import Product
 from .serializers import ScrapeURLSerializer, ProductSerializer
-import requests
+import requests, random, time
 from bs4 import BeautifulSoup, Comment
 from .utils import extract_product_info
 from rest_framework.decorators import api_view
@@ -10,10 +10,15 @@ from utils.scraping.get_proxy import get_proxy
 from selectorlib import Extractor
 
 from .proxy import ProxyManager
-import os
+import os, re
 import openai
 
 proxy_manager = ProxyManager()
+
+username = "geonode_ULZNrg2KXZ"
+password = "3c404204-1d3e-4bb0-b47e-f863d6ec9deb"
+GEONODE_DNS = "rotating-residential.geonode.com:9000"
+ 
 
 # Create an Extractor by reading from the YAML file
 # e = Extractor.from_yaml_file('selectors.yml')
@@ -58,6 +63,7 @@ class ScrapeAmazonViewSet(viewsets.ViewSet):
 
 
 
+# fn that loops over all div and finds the ones with the most classes 
 
 
 
@@ -87,8 +93,9 @@ def scrape(url):
     # Download the page using requests
     print("Downloading %s"%url)
     # print("Proxy used:", proxy)
-    
-    r = requests.get(url, headers=headers)
+    proxy = {"http":"http://{}:{}@{}".format(username, password, GEONODE_DNS)}
+    import pdb; pdb.set_trace()
+    r = requests.get(url, headers=headers, proxies=proxy)
     # Simple check to check if page was blocked (Usually 503)
     if r.status_code > 500:
         if "To discuss automated access to Amazon data please contact" in r.text:
@@ -98,27 +105,71 @@ def scrape(url):
         return None
     # Pass the HTML of the page and create 
     
-    return r
+    return r.content
 
 @api_view(['POST'])
 def get_data(request):      
     # Create an Extractor by reading from the YAML file
     path_to_yaml = os.path.join(os.path.dirname(__file__), 'search_results.yml')
     e = Extractor.from_yaml_file(path_to_yaml)
+    html = []
     # get the url from the request
-    url = 'https://www.amazon.com/s?k=new-releases/baby-products'
+    # url = 'https://www.amazon.com/s?k=new-releases/baby-products'
+    run = True
+    num = 100
+    start = 0
     
-    # get the html from the url
-    html = scrape(url)
+    while run and start < 300:
+        url = f'https://www.google.com/search?num=100&start={start}&q=+"shopify" AND "%40gmail.com" -intitle:"profiles" -inurl:"dir/+"+site:www.linkedin.com/in/+OR+site:www.linkedin.com/pub/'
+        # get the html from the url
+        res = scrape(url)
+        
+        if res is None:
+            run = False
+        else:
+            emails = extract_email_addresses(res)
+            html = html + emails
+            # increment the start by 100
+            start += 100
+            # pause random time between 5 and 10 seconds
+            time.sleep(random.randint(1, 2))
+    # get text from the html
     
+    saveEmails(html)
     # get data from the html
-    data = e.extract(html.text)
+    # data = e.extract(html.text)
     
-    return Response(data, status=status.HTTP_200_OK)
+    return Response(html, status=status.HTTP_200_OK)
         
+
+def saveEmails(emails):
+    for email in emails:
+        try:
+            Product.objects.create(email=email)
+        except:
+            pass
         
+# fn to return email addresses from a string
+def extract_email_addresses(html_content):
+    email_addresses = set()  # Using a set to avoid duplicates
+    # Create a BeautifulSoup object
+    soup = BeautifulSoup(html_content, 'html.parser')
+    # loop over the html content
+
+    # Use regular expressions to find email addresses
+    email_pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}'
+    email_regex = re.compile(email_pattern)
+
+    # Find all text in the HTML, including text within <em> tags
+    text = ''.join(soup.stripped_strings)
+
+    # Search for email addresses and add them to the set
+    for match in email_regex.finditer(text):
+        email_addresses.add(match.group())
+
+    return list(email_addresses)
         
-        
+        # "<!doctype html><html itemscope=\"\" itemtype=\"http://schema.
         
         
         

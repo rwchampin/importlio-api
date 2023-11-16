@@ -142,11 +142,14 @@ DATABASES = {
 
 SENDGRID_API_KEY = getenv('SENDGRID_API_KEY')
 
-EMAIL_HOST = 'smtp.sendgrid.net'
-EMAIL_HOST_USER = 'apikey' # this is exactly the value 'apikey'
-EMAIL_HOST_PASSWORD = SENDGRID_API_KEY
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
+# EMAIL_HOST = 'smtp.sendgrid.net'
+# EMAIL_HOST_USER = 'apikey' # this is exactly the value 'apikey'
+# EMAIL_HOST_PASSWORD = SENDGRID_API_KEY
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
 DEFAULT_FROM_EMAIL = 'support@importlio.com'
 DOMAIN = getenv("DOMAIN")
 SITE_NAME = "Importlio"
@@ -223,7 +226,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10,  # Set the number of items per page
+    'PAGE_SIZE': 5,  # Set the number of items per page
 }
 
 DJOSER = {
@@ -279,3 +282,5 @@ AUTH_USER_MODEL = "users.UserAccount"
 
 PROXY_ROTATION_USER = getenv("PROXY_ROTATION_USER")
 PROXY_ROTATION_PASSWORD = getenv("PROXY_ROTATION_PASSWORD")
+
+TEMPLATE_DIRS = ('./email_templates/',)
