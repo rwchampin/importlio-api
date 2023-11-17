@@ -133,22 +133,15 @@ DATABASES = {
 # EMAIL_BACKEND = "django_ses.SESBackend"
 # DEFAULT_FROM_EMAIL = getenv("AWS_SES_FROM_EMAIL")
 
-# AWS_SES_ACCESS_KEY_ID = getenv("AWS_SES_ACCESS_KEY_ID")
-# AWS_SES_SECRET_ACCESS_KEY = getenv("AWS_SES_SECRET_ACCESS_KEY")
-# AWS_SES_REGION_NAME = getenv("AWS_SES_REGION_NAME")
-# AWS_SES_REGION_ENDPOINT = f"email.{AWS_SES_REGION_NAME}.amazonaws.com"
-# AWS_SES_FROM_EMAIL = getenv("AWS_SES_FROM_EMAIL")
-# USE_SES_V2 = True
+ 
 
 SENDGRID_API_KEY = getenv('SENDGRID_API_KEY')
 
-# EMAIL_HOST = 'smtp.sendgrid.net'
-# EMAIL_HOST_USER = 'apikey' # this is exactly the value 'apikey'
-# EMAIL_HOST_PASSWORD = SENDGRID_API_KEY
-# EMAIL_PORT = 587
-# EMAIL_USE_TLS = True
-
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.sendgrid.net'
+EMAIL_HOST_USER = 'apikey' # this is exactly the value 'apikey'
+EMAIL_HOST_PASSWORD = SENDGRID_API_KEY
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
 
 DEFAULT_FROM_EMAIL = 'support@importlio.com'
 DOMAIN = getenv("DOMAIN")
@@ -279,8 +272,3 @@ CORS_ALLOW_ALL_ORIGINS = True
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "users.UserAccount"
-
-PROXY_ROTATION_USER = getenv("PROXY_ROTATION_USER")
-PROXY_ROTATION_PASSWORD = getenv("PROXY_ROTATION_PASSWORD")
-
-TEMPLATE_DIRS = ('./email_templates/',)

@@ -6,6 +6,7 @@ from .views import (
     CustomTokenVerifyView,
     LogoutView,
     UserAccountViewSet,
+    getLoggedInUser
 )
 from rest_framework import routers
 from django.conf.urls import include
@@ -15,6 +16,7 @@ router.register(r'users', UserAccountViewSet)
 
 
 urlpatterns = [
+    path('user/current-user/', getLoggedInUser),
     re_path(
         r'^o/(?P<provider>\S+)/$',
         CustomProviderAuthView.as_view(),

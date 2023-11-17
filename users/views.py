@@ -131,6 +131,8 @@ class UserAccountViewSet(viewsets.ModelViewSet):
     
 
  
-    
-
- 
+@api_view(['GET'])
+def getLoggedInUser(request):
+    user = request.user
+    serializer = UserAccountSerializer(user)
+    return Response(serializer.data)
