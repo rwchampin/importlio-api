@@ -1,20 +1,13 @@
 from django.db import models
+
+    
 class Product(models.Model):
-    asin = models.CharField(max_length=255, unique=True)
+    title = models.TextField(default='', null=True, blank=True)
+    image = models.TextField(default='', null=True, blank=True)
+    price = models.CharField(max_length=255, null=True, blank=True)
+    reviews = models.CharField(max_length=255, null=True, blank=True)
+    rating = models.CharField(max_length=255, null=True, blank=True)
+    
+class SearchURL(models.Model):
     url = models.URLField(unique=True)
-    title = models.CharField(max_length=255)
-    description = models.TextField()
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    reviews = models.IntegerField()
-    images = models.JSONField()
-    availability = models.BooleanField()
-    variants = models.JSONField()
-    search_url = models.URLField()
-    img = models.ImageField(upload_to='images/', null=True, blank=True)
-    rating = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    description = models.TextField(null=True, blank=True)
-    info_from_manufacturer = models.TextField(null=True, blank=True)
-    similar_products = models.JSONField(null=True, blank=True)
-    whats_in_the_box = models.TextField(null=True, blank=True)
-    videos = models.JSONField(null=True, blank=True)
-    technical_details = models.JSONField(null=True, blank=True)
+    product = models.ManyToManyField(Product, related_name='search_url', blank=True, null=True)

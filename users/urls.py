@@ -16,7 +16,7 @@ router.register(r'users', UserAccountViewSet)
 
 
 urlpatterns = [
-    path('user/current-user/', getLoggedInUser),
+    
     re_path(
         r'^o/(?P<provider>\S+)/$',
         CustomProviderAuthView.as_view(),
@@ -29,5 +29,7 @@ urlpatterns = [
     path('jwt/verify/', CustomTokenVerifyView.as_view()),
     path('logout/', LogoutView.as_view()),
     path('auth/', include(router.urls)),
-    
+    path('auth/', include('djoser.urls')),
+    path('auth/', include('djoser.urls.jwt')),
+    path('auth/current-user/', getLoggedInUser),
 ]

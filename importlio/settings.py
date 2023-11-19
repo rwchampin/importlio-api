@@ -223,6 +223,7 @@ REST_FRAMEWORK = {
 }
 
 DJOSER = {
+    "HIDE_USERS": True,
     "PASSWORD_RESET_CONFIRM_URL": "password-reset/{uid}/{token}",
     "SEND_ACTIVATION_EMAIL": True,
     "ACTIVATION_URL": "activation/{uid}/{token}",

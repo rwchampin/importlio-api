@@ -1,12 +1,11 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
-from .models import Product
-from .serializers import ScrapeURLSerializer, ProductSerializer
+from .models import Product, SearchURL
+from .serializers import ProductSerializer
 import requests, random, time
 from bs4 import BeautifulSoup, Comment
 from .utils import extract_product_info
 from rest_framework.decorators import api_view
-from utils.scraping.get_proxy import get_proxy
 from selectorlib import Extractor
 
 from .proxy import ProxyManager
@@ -93,8 +92,10 @@ def scrape(url):
     # Download the page using requests
     print("Downloading %s"%url)
     # print("Proxy used:", proxy)
-    proxy = {"http":"http://{}:{}@{}".format(username, password, GEONODE_DNS)}
-    import pdb; pdb.set_trace()
+    proxy = {
+         'https':'https://customer-importlio_proxy:BlackMagic15@us-pr.oxylabs.io:10000'
+    }
+    
     r = requests.get(url, headers=headers, proxies=proxy)
     # Simple check to check if page was blocked (Usually 503)
     if r.status_code > 500:
@@ -104,43 +105,65 @@ def scrape(url):
             print("Page %s must have been blocked by Amazon as the status code was %d"%(url,r.status_code))
         return None
     # Pass the HTML of the page and create 
-    
-    return r.content
+    path_to_yaml = os.path.join(os.path.dirname(__file__), 'search_results.yml')
+    e = Extractor.from_yaml_file(path_to_yaml)
+
+    return e.extract(r.text)
 
 @api_view(['POST'])
 def get_data(request):      
+    url = 'https://www.amazon.com/s?k=new-releases/baby-products'
     # Create an Extractor by reading from the YAML file
-    path_to_yaml = os.path.join(os.path.dirname(__file__), 'search_results.yml')
-    e = Extractor.from_yaml_file(path_to_yaml)
-    html = []
-    # get the url from the request
-    # url = 'https://www.amazon.com/s?k=new-releases/baby-products'
-    run = True
-    num = 100
-    start = 0
     
-    while run and start < 300:
-        url = f'https://www.google.com/search?num=100&start={start}&q=+"shopify" AND "%40gmail.com" -intitle:"profiles" -inurl:"dir/+"+site:www.linkedin.com/in/+OR+site:www.linkedin.com/pub/'
-        # get the html from the url
-        res = scrape(url)
+    
+    # get the html from the url
+    res = scrape(url)
+    import pdb; pdb.set_trace()
+    if len(res['products']) > 0:
+        # print the data
+        print(res['products'])
+
+        # save the url to the database
+        saved_url = save_url(url)
         
-        if res is None:
-            run = False
-        else:
-            emails = extract_email_addresses(res)
-            html = html + emails
-            # increment the start by 100
-            start += 100
-            # pause random time between 5 and 10 seconds
-            time.sleep(random.randint(1, 2))
-    # get text from the html
-    
-    saveEmails(html)
-    # get data from the html
-    # data = e.extract(html.text)
-    
-    return Response(html, status=status.HTTP_200_OK)
+        # save the products to the database
+        saved_products = saveProducts(res['products'], saved_url)
         
+        # serialie the products
+        serializer = ProductSerializer(saved_products, many=True)
+        
+    return Response(serializer.data, status=status.HTTP_200_OK)
+        
+def saveProducts(products, saved_url):
+    saved_products = []
+    for product in products:
+        try:
+            new_product = Product.objects.create(
+                title=product['title'],
+                rating=product['rating'],
+                reviews=product['reviews'],
+                price=product['price'],
+                image=product['image'],
+            )
+            
+            if new_product:
+                saved_products.append(new_product)
+        except:
+            pass
+        
+    # save the products to the search url
+    if saved_url:
+        saved_url.product.add(*saved_products)
+    
+    return saved_products
+        
+def save_url(url):
+    try:
+        new_url = SearchURL.objects.create(url=url)
+        return new_url
+    except:
+        pass
+    
 
 def saveEmails(emails):
     for email in emails:

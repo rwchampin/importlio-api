@@ -133,6 +133,7 @@ class UserAccountViewSet(viewsets.ModelViewSet):
  
 @api_view(['GET'])
 def getLoggedInUser(request):
+    import pdb; pdb.set_trace()
     user = request.user
     serializer = UserAccountSerializer(user)
     return Response(serializer.data)
