@@ -78,7 +78,9 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
     region = models.CharField(max_length=255, null=True, blank=True)
     zip = models.CharField(max_length=255, null=True, blank=True)
     
-    
+    # Product Details
+    products = models.ManyToManyField('products.Product', blank=True)
+    product_lists = models.ManyToManyField('products.ProductList', blank=True)
     
     # Account Details
     account_type = models.CharField(max_length=255, choices=memberships, default=memberships[0][0])

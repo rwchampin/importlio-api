@@ -31,3 +31,10 @@ products:
             xpath: null
             type: Attribute
             attribute: src
+
+asins:
+    css: 'div[data-component-type="s-search-result"]'
+    xpath: null
+    multiple: true
+    type: Attribute
+    attribute: data-asin

@@ -1,67 +1,16 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, filters
 from rest_framework.response import Response
 from .models import Product, SearchURL
 from .serializers import ProductSerializer
-import requests, random, time
-from bs4 import BeautifulSoup, Comment
-from .utils import extract_product_info
+import requests
 from rest_framework.decorators import api_view
 from selectorlib import Extractor
+from django_filters.rest_framework import DjangoFilterBackend
 
-from .proxy import ProxyManager
 import os, re
-import openai
-
-proxy_manager = ProxyManager()
-
-username = "geonode_ULZNrg2KXZ"
-password = "3c404204-1d3e-4bb0-b47e-f863d6ec9deb"
-GEONODE_DNS = "rotating-residential.geonode.com:9000"
- 
-
 # Create an Extractor by reading from the YAML file
 # e = Extractor.from_yaml_file('selectors.yml')
-
-# from .utils import get_title, get_description, get_price, get_reviews, get_images, get_availability, get_variants
-class ScrapeAmazonViewSet(viewsets.ViewSet):
-    http_method_names = ['post']
-    authentication_classes = []
-    permission_classes = []
-    
-    def create(self, request):
-        headers = ({'User-Agent':
-        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.157 Safari/537.36',
-        'Accept-Language': 'en-US, en;q=0.5'})
-        response = requests.get('https://www.amazon.com/s?k=laptops&crid=1BKE05LZEL0B2&sprefix=laptops%2Caps%2C87&ref=nb_sb_noss_1', headers=headers)
-        import pdb; pdb.set_trace()
-        if response.status_code == 200:
-            product_list = extract_product_info(response.content)
-            import pdb; pdb.set_trace()
-            # soup = BeautifulSoup(response.content, "lxml")
-            # title = get_title(soup)
-            # description = get_description(soup)
-            # price = get_price(soup)
-            # reviews = get_reviews(soup)
-            # images = get_images(soup)
-            return Response(product_list, status=status.HTTP_200_OK)
-            # Save to database
-            # product = Product.objects.create(
-            #     url=url,
-            #     title=title,
-            #     description=description,
-            #     price=price,
-            #     reviews=reviews,
-            #     images=images,
-            #     availability=availability,
-            #     variants=variants
-            # )
-            # product_serializer = ProductSerializer(product)
-            # return Response(product_serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response({'error': 'Failed to retrieve the page.'}, status=status.HTTP_400_BAD_REQUEST)
-
-
-
+ 
 # fn that loops over all div and finds the ones with the most classes 
 
 
@@ -70,8 +19,8 @@ class ScrapeAmazonViewSet(viewsets.ViewSet):
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-
-    
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['title', 'asin']
 
 
 def scrape(url):  
@@ -111,86 +60,117 @@ def scrape(url):
     return e.extract(r.text)
 
 @api_view(['POST'])
-def get_data(request):      
-    url = 'https://www.amazon.com/s?k=new-releases/baby-products'
+def get_data(request):     
+    url = request.data['url'] 
+
+    # check if the url is already in the database
+    search_url = SearchURL.objects.get(url=url)
+
+    if search_url is not None:
+        # get the products from the search url
+        products = search_url.products.all()
+
+        # serialize the products
+        serializer = ProductSerializer(products, many=True)
+        
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     # Create an Extractor by reading from the YAML file
-    
+    search_url = saveSearchURL(url)
     
     # get the html from the url
-    res = scrape(url)
-    import pdb; pdb.set_trace()
-    if len(res['products']) > 0:
-        # print the data
-        print(res['products'])
+    res = scrape(search_url)
 
-        # save the url to the database
-        saved_url = save_url(url)
-        
+    if len(res['products']) > 0:
         # save the products to the database
-        saved_products = saveProducts(res['products'], saved_url)
+        saved_products = saveProducts(res)
+        
+        # add the products to the search url
+        addProductsToSearchURL(search_url, saved_products)
         
         # serialie the products
         serializer = ProductSerializer(saved_products, many=True)
         
     return Response(serializer.data, status=status.HTTP_200_OK)
         
-def saveProducts(products, saved_url):
+def saveProducts(data):
     saved_products = []
+    products = data['products']
+    asins = data['asins']
+    index = 0
     for product in products:
         try:
             new_product = Product.objects.create(
+                asin=asins[index],
                 title=product['title'],
                 rating=product['rating'],
                 reviews=product['reviews'],
                 price=product['price'],
                 image=product['image'],
+                product_url=product['url']
             )
-            
+            index += 1
             if new_product:
                 saved_products.append(new_product)
         except:
             pass
         
-    # save the products to the search url
-    if saved_url:
-        saved_url.product.add(*saved_products)
     
     return saved_products
-        
-def save_url(url):
-    try:
-        new_url = SearchURL.objects.create(url=url)
-        return new_url
-    except:
-        pass
-    
 
-def saveEmails(emails):
-    for email in emails:
-        try:
-            Product.objects.create(email=email)
-        except:
-            pass
+def saveSearchURL(url):
+    try:
+        search_url = SearchURL.objects.create(url=url)
+    except:
+        return False
+    
+    return search_url     
+ 
+    
+def addProductsToSearchURL(url, products):
+    try:
+
+        for product in products:
+            url.products.add(product)
+    except:
+        return False
+    
+    return True
+
+
+@api_view(['POST'])
+def product_search(request):
+
+    # query = request.data['query']
+    query = 'baby'
+
+    # search for Product objects whose title contains the query
+    products = Product.objects.filter(title__icontains=query)
+    
+    # serialize the products
+    serializer = ProductSerializer(products, many=True)
+
+    return Response(serializer.data, status=status.HTTP_200_OK)
         
 # fn to return email addresses from a string
-def extract_email_addresses(html_content):
-    email_addresses = set()  # Using a set to avoid duplicates
-    # Create a BeautifulSoup object
-    soup = BeautifulSoup(html_content, 'html.parser')
-    # loop over the html content
+# def extract_email_addresses(html_content):
+#     email_addresses = set()  # Using a set to avoid duplicates
+#     # Create a BeautifulSoup object
+#     soup = BeautifulSoup(html_content, 'html.parser')
+#     # loop over the html content
 
-    # Use regular expressions to find email addresses
-    email_pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}'
-    email_regex = re.compile(email_pattern)
+#     # Use regular expressions to find email addresses
+#     email_pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}'
+#     email_regex = re.compile(email_pattern)
 
-    # Find all text in the HTML, including text within <em> tags
-    text = ''.join(soup.stripped_strings)
+#     # Find all text in the HTML, including text within <em> tags
+#     text = ''.join(soup.stripped_strings)
 
-    # Search for email addresses and add them to the set
-    for match in email_regex.finditer(text):
-        email_addresses.add(match.group())
+#     # Search for email addresses and add them to the set
+#     for match in email_regex.finditer(text):
+#         email_addresses.add(match.group())
 
-    return list(email_addresses)
+#     return list(email_addresses)
         
         # "<!doctype html><html itemscope=\"\" itemtype=\"http://schema.
         

@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'customers',
     'marketing',
     "subscribers",
+    'django_filters',
 ]
 
 MIDDLEWARE = [
@@ -111,14 +112,23 @@ WSGI_APPLICATION = "importlio.wsgi.application"
     #         },
     #     }
     # }
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.mysql",
+#         "HOST": "importlio-prod-do-user-14345350-0.b.db.ondigitalocean.com",
+#         "PORT": "25060",
+#         "NAME": "defaultdb",
+#         "USER": "doadmin",
+#         "PASSWORD": "AVNS_3snn9HVBKWJlhgExj2g",
+#     }
+# }
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "HOST": "importlio-prod-do-user-14345350-0.b.db.ondigitalocean.com",
-        "PORT": "25060",
-        "NAME": "defaultdb",
-        "USER": "doadmin",
-        "PASSWORD": "AVNS_3snn9HVBKWJlhgExj2g",
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
+        "TEST": {
+            "NAME": BASE_DIR / "test_db.sqlite3",
+        },
     }
 }
 # elif len(sys.argv) > 0 and sys.argv[1] != "collectstatic":
@@ -209,6 +219,7 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 REST_FRAMEWORK = {
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_THROTTLE_RATES': {
         'anon': '10/minute',
         'user': '10/minute'
