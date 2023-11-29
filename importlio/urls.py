@@ -8,7 +8,7 @@ from django.conf.urls.static import static
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
  
 
-from products.urls import urlpatterns as product_urls
+# from products.urls import urlpatterns as product_urls
  
 
 # Import the product scraping URLs
@@ -33,7 +33,7 @@ urlpatterns = [
     path("api/", include("users.urls")),
     path("api/", include("posts.urls")),
     path("api/", include("proxies.urls")),
-    path("api/", include("products.urls")),
+    # path("api/", include("products.urls")),
     path("api/", include("customers.urls")),
     path("api/", include("marketing.urls")),
     
@@ -45,7 +45,7 @@ urlpatterns = [
 ]
 
 # Add the product scraping URLs
-urlpatterns += product_urls
+# urlpatterns += product_urls
 
 # Serve media files during development
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

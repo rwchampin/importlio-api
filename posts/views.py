@@ -1,9 +1,9 @@
 from django.utils import timezone
-from rest_framework import viewsets, generics, status
+from rest_framework import viewsets, generics, status, mixins, permissions
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from django.core.files.base import ContentFile
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes, action
 
 import base64
 from .models import Post, Tag, Category, PostType, PostTopicIdeas
@@ -21,6 +21,32 @@ class PostViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny]  # Make this view public
     lookup_field = 'slug'
     queryset = Post.objects.all()
+    
+    def get_queryset(self):
+        # check if limit query param is present
+        limit = self.request.query_params.get('limit', None)
+        
+        # order by updated && if post_status is published
+        if limit is not None:
+            # queryset = Post.objects.all()[:int(limit)][::-1]
+            queryset = Post.objects.filter(post_status='published')[:int(limit)][::-1]
+        else:
+            queryset = Post.objects.filter(post_status='published')[::-1]
+            
+        return queryset
+    
+    # def list(self, request, *args, **kwargs):
+    #     limit = request.query_params.get('limit', None)
+
+    #     # order by updated
+    #     if limit is not None:
+    #         queryset = self.filter_queryset(self.get_queryset())[:int(limit)][::-1]
+    #     else:
+    #         queryset = self.filter_queryset(self.get_queryset())[::-1]
+            
+
+    #     serializer = self.get_serializer(queryset, many=True)
+    #     return Response(serializer.data)
       
 class PostUpdateView(generics.UpdateAPIView):
     queryset = Post.objects.all()
@@ -94,12 +120,6 @@ class PostsByPostTypeView(generics.ListAPIView):
         post_type_slug = self.kwargs['post_type']
         return Post.objects.filter(post_type__slug=post_type_slug).order_by('-updated')
 
-class RecentPostsView(generics.ListAPIView):
-    serializer_class = PostSerializer
-    permission_classes = [AllowAny]  # Make this view public
-    def get_queryset(self):
-        return Post.objects.filter(published__lte=timezone.now()).order_by('-updated')[:3]
-    
 class PostsByDate(generics.ListAPIView):
     serializer_class = PostSerializer
     permission_classes = [AllowAny]  # Make this view public

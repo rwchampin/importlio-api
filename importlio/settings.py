@@ -58,7 +58,7 @@ INSTALLED_APPS = [
     "posts",
     "drf_yasg",
     "proxies",
-    "products",
+    # "products",
     'customers',
     'marketing',
     "subscribers",
@@ -112,25 +112,25 @@ WSGI_APPLICATION = "importlio.wsgi.application"
     #         },
     #     }
     # }
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.mysql",
-#         "HOST": "importlio-prod-do-user-14345350-0.b.db.ondigitalocean.com",
-#         "PORT": "25060",
-#         "NAME": "defaultdb",
-#         "USER": "doadmin",
-#         "PASSWORD": "AVNS_3snn9HVBKWJlhgExj2g",
-#     }
-# }
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-        "TEST": {
-            "NAME": BASE_DIR / "test_db.sqlite3",
-        },
+        "ENGINE": "django.db.backends.mysql",
+        "HOST": "importlio-prod-do-user-14345350-0.b.db.ondigitalocean.com",
+        "PORT": "25060",
+        "NAME": "defaultdb",
+        "USER": "doadmin",
+        "PASSWORD": "AVNS_3snn9HVBKWJlhgExj2g",
     }
 }
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.sqlite3",
+#         "NAME": BASE_DIR / "db.sqlite3",
+#         "TEST": {
+#             "NAME": BASE_DIR / "test_db.sqlite3",
+#         },
+#     }
+# }
 # elif len(sys.argv) > 0 and sys.argv[1] != "collectstatic":
 #     if getenv("DATABASE_URL", None) is None:
 #         raise Exception("DATABASE_URL environment variable not defined")

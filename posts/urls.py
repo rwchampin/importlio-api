@@ -11,7 +11,6 @@ router.register(r'post-ideas', views.PostTopicIdeasViewSet)
 
 urlpatterns = [
    
-    path('posts/recent/', views.RecentPostsView.as_view(), name='recent-posts'),
     path('posts/tags/<slug:tag>/', views.PostsByTagView.as_view(), name='posts-by-tag'),
     path('posts/categories/<slug:category>/', views.PostsByCategoryView.as_view(), name='posts-by-category'),
     path('posts/post-types/<slug:post_type>/', views.PostsByPostTypeView.as_view(), name='posts-by-post-type'),
