@@ -115,11 +115,11 @@ WSGI_APPLICATION = "importlio.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        "HOST": "importlio-prod-do-user-14345350-0.b.db.ondigitalocean.com",
-        "PORT": "25060",
-        "NAME": "defaultdb",
-        "USER": "doadmin",
-        "PASSWORD": "AVNS_3snn9HVBKWJlhgExj2g",
+        "HOST": getenv("DB_HOST"),
+        "PORT": getenv("DB_PORT"),
+        "NAME": getenv("DB_NAME"),
+        "USER": getenv("DB_USER"),
+        "PASSWORD": getenv("DB_PASSWORD"),
     }
 }
 # DATABASES = {
