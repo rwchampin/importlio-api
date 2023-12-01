@@ -217,10 +217,22 @@ class PostTheme(models.Model):
         
     def __str__(self):
         return self.name
-        
+
+class PostOutlineItem(models.Model):
+    text = models.CharField(max_length=255)
+    order = models.IntegerField()
+    
+    def __str__(self):
+        return self.text
+    
+class PostOutline(models.Model):
+    name = models.CharField(max_length=255)
+    text = models.TextField()
+    items = models.ManyToManyField(PostOutlineItem, blank=True)
+    
 class Post(models.Model):
     post_type = models.ForeignKey(
-        'PostType', on_delete=models.CASCADE, blank=True, null=True)
+        'PostType', on_delete=models.SET_NULL, blank=True, null=True)
     title = models.CharField(max_length=400, blank=True, null=True)
     subtitle = models.CharField(max_length=400, blank=True, null=True)
     headline = models.CharField(max_length=400, blank=True, null=True)

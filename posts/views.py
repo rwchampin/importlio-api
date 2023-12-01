@@ -1,12 +1,12 @@
-from django.utils import timezone
-from rest_framework import viewsets, generics, status, mixins, permissions
+from rest_framework import viewsets, generics, status, filters
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from django.core.files.base import ContentFile
-from rest_framework.decorators import api_view, permission_classes, action
+from rest_framework.decorators import api_view
+
 
 import base64
-from .models import Post, Tag, Category, PostType, PostTopicIdeas
+from .models import Post, Tag, Category, PostType, PostTopicIdeas, PostOutline, PostOutlineItem
 from .serializers import (
     PostSerializer, 
     TagSerializer, 
@@ -14,24 +14,36 @@ from .serializers import (
     PostTypeSerializer, 
     PostCreateSerializer,
     PostTopicIdeasSerializer,
+    PostOutlineItemSerializer,
+    PostOutlineSerializer
 )
+
+
 
 class PostViewSet(viewsets.ModelViewSet):
     serializer_class = PostSerializer
     permission_classes = [AllowAny]  # Make this view public
     lookup_field = 'slug'
-    queryset = Post.objects.all()
+    queryset = Post.objects.filter(post_status='published').order_by('-updated')
+    basename = 'post'  # Add this line to specify the basename
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['title', 'subtitle', 'content', 'tags__name', 'categories__name', 'post_type__name']
     
     def get_queryset(self):
         # check if limit query param is present
         limit = self.request.query_params.get('limit', None)
+        post_status = self.request.query_params.get('post_status', None)
         
-        # order by updated && if post_status is published
+        queryset = Post.objects.all()
+        
+        # filter by post_status
+        if post_status is not None:
+            queryset = queryset.filter(post_status=post_status).order_by('-updated')
+        
+        # apply limit and reverse order if limit is specified
         if limit is not None:
-            # queryset = Post.objects.all()[:int(limit)][::-1]
-            queryset = Post.objects.filter(post_status='published')[:int(limit)][::-1]
-        else:
-            queryset = Post.objects.filter(post_status='published')[::-1]
+            queryset = queryset[:int(limit)][::-1]
+            
             
         return queryset
     
@@ -104,21 +116,21 @@ class PostsByTagView(generics.ListAPIView):
 
     def get_queryset(self):
         tag_slug = self.kwargs['tag']
-        return Post.objects.filter(tags__slug=tag_slug).order_by('-updated')
+        return Post.objects.filter(post_status="published",tags__slug=tag_slug).order_by('-updated')
 
 class PostsByCategoryView(generics.ListAPIView):
     serializer_class = PostSerializer
     permission_classes = [AllowAny]  # Make this view public
     def get_queryset(self):
         category = self.kwargs['category']
-        return Post.objects.filter(categories__slug=category).order_by('-updated')
+        return Post.objects.filter(post_status="published",categories__slug=category).order_by('-updated')
     
 class PostsByPostTypeView(generics.ListAPIView):
     serializer_class = PostSerializer
     permission_classes = [AllowAny]  # Make this view public
     def get_queryset(self):
         post_type_slug = self.kwargs['post_type']
-        return Post.objects.filter(post_type__slug=post_type_slug).order_by('-updated')
+        return Post.objects.filter(post_status="published", post_type__slug=post_type_slug).order_by('-updated')
 
 class PostsByDate(generics.ListAPIView):
     serializer_class = PostSerializer
@@ -228,3 +240,14 @@ def create_post_topic_ideas():
     if PostTopicIdeas.objects.count() == 0:
         for topic in default_topic_ideas:
             PostTopicIdeas.objects.create(topic=topic)
+
+
+class PostOutlineViewSet(viewsets.ModelViewSet):
+    serializer_class = PostOutlineSerializer
+    permission_classes = [AllowAny]  # Make this view public
+    queryset = PostOutline.objects.all()
+    
+class PostOutlineItemViewSet(viewsets.ModelViewSet):
+    serializer_class = PostOutlineItemSerializer
+    permission_classes = [AllowAny]  # Make this view public
+    queryset = PostOutlineItem.objects.all()

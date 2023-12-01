@@ -3,7 +3,7 @@ from django.core.files.base import ContentFile
 import base64
 
  
-from .models import Post, Tag, Category, PostType, PostTopicIdeas
+from .models import Post, Tag, Category, PostType, PostTopicIdeas, PostOutline, PostOutlineItem
  
 # For handling Base64 encoded images
 class Base64ImageField(serializers.ImageField):
@@ -122,3 +122,13 @@ class PostTopicIdeasSerializer(serializers.ModelSerializer):
         fields = '__all__'
         
          
+class PostOutlineItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PostOutlineItem
+        fields = '__all__'
+        
+class PostOutlineSerializer(serializers.ModelSerializer):
+    class Meta:
+        depth = 1
+        model = PostOutline
+        fields = '__all__'

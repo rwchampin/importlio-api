@@ -5,7 +5,6 @@ from .serializers import ProductSerializer
 import requests
 from rest_framework.decorators import api_view
 from selectorlib import Extractor
-from django_filters.rest_framework import DjangoFilterBackend
 
 import os, re
 # Create an Extractor by reading from the YAML file
