@@ -230,6 +230,17 @@ class PostOutline(models.Model):
     text = models.TextField()
     items = models.ManyToManyField(PostOutlineItem, blank=True)
     
+class PostSection(models.Model):
+    post = models.ForeignKey('Post', on_delete=models.CASCADE)
+    title = models.CharField(max_length=255)
+    subtitle = models.CharField(max_length=255, blank=True, null=True)
+    image = models.ImageField(
+        upload_to='featured_images/', blank=True, null=True)
+    content = models.TextField(blank=True, null=True)
+    html_id = models.CharField(max_length=255, blank=True, null=True)
+    
+    def __str__(self):
+        return self.name
 class Post(models.Model):
     post_type = models.ForeignKey(
         'PostType', on_delete=models.SET_NULL, blank=True, null=True)

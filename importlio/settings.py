@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     "posts",
     "drf_yasg",
     "proxies",
+    "ai",
     # "products",
     'customers',
     'marketing',
