@@ -1,7 +1,7 @@
 from rest_framework import serializers
  
  
-from .models import Assistant, ChatRoom, ChatMessage
+from .models import Assistant, ChatRoom, ChatMessage, AssistantModel
  
 
 class AssistantSerializer(serializers.ModelSerializer):
@@ -11,7 +11,7 @@ class AssistantSerializer(serializers.ModelSerializer):
         
 class ChatRoomSerializer(serializers.ModelSerializer):
     class Meta:
-        depth = 1
+        depth = 2
         model = ChatRoom
         fields = '__all__'
         
@@ -21,3 +21,7 @@ class ChatMessageSerializer(serializers.ModelSerializer):
         model = ChatMessage
         fields = '__all__'
    
+class AssistantModelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AssistantModel
+        fields = '__all__'

@@ -4,9 +4,10 @@ from . import views
 
 router = DefaultRouter()
 router.register(r'assistants', views.AssistantViewSet)
+router.register(r'assistant-models', views.AssistantModelViewSet)
 router.register(r'chat-rooms', views.ChatRoomViewSet)
 router.register(r'chat-messages', views.ChatMessageViewSet)
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path('ai/', include(router.urls)),
 ]
