@@ -6,13 +6,10 @@ from .views import (
     CustomTokenVerifyView,
     LogoutView,
     UserAccountViewSet,
-    getLoggedInUser
 )
 from rest_framework import routers
 from django.conf.urls import include
 
-router = routers.DefaultRouter()
-router.register(r'users', UserAccountViewSet)
 
 
 urlpatterns = [
@@ -28,8 +25,4 @@ urlpatterns = [
     path('jwt/refresh/', CustomTokenRefreshView.as_view()),
     path('jwt/verify/', CustomTokenVerifyView.as_view()),
     path('logout/', LogoutView.as_view()),
-    path('auth/', include(router.urls)),
-    path('auth/', include('djoser.urls')),
-    path('auth/', include('djoser.urls.jwt')),
-    path('auth/current-user/', getLoggedInUser),
 ]
