@@ -2,10 +2,12 @@ from rest_framework import serializers
 from django.core.files.base import ContentFile
 import base64
 
- 
+
 from .models import Post, Tag, Category, PostType, PostTopicIdeas, PostOutline, PostOutlineItem
- 
+
 # For handling Base64 encoded images
+
+
 class Base64ImageField(serializers.ImageField):
     def to_internal_value(self, data):
         from django.core.files.base import ContentFile
@@ -38,7 +40,7 @@ class Base64ImageField(serializers.ImageField):
 
         return extension
 
-  
+
 # Serializer for creating posts
 class PostCreateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -46,11 +48,14 @@ class PostCreateSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 # Individual serializers for Tag, Category, and PostType
+
+
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         depth = 1
         fields = '__all__'
+
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -58,21 +63,25 @@ class CategorySerializer(serializers.ModelSerializer):
         depth = 1
         fields = '__all__'
 
+
 class PostTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = PostType
         depth = 1
         fields = '__all__'
 
+
 class PostSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, required=False)
     categories = CategorySerializer(many=True, required=False)
     post_type = PostTypeSerializer(required=False)
     updated = serializers.DateTimeField(required=False)
-    updated_pretty = serializers.SerializerMethodField(method_name='get_updated_pretty', required=False)
+    updated_pretty = serializers.SerializerMethodField(
+        method_name='get_updated_pretty', required=False)
 
     published = serializers.DateTimeField(required=False)
-    published_pretty = serializers.SerializerMethodField(method_name='get_published_pretty', required=False)
+    published_pretty = serializers.SerializerMethodField(
+        method_name='get_published_pretty', required=False)
 
     def get_updated_pretty(self, obj):
         if obj.updated:
@@ -95,8 +104,6 @@ class PostSerializer(serializers.ModelSerializer):
     # desktop_image = Base64ImageField(
     #     max_length=None, use_url=True, required=False
     # )
-    
-    
 
     class Meta:
         model = Post
@@ -109,24 +116,34 @@ class PostSerializer(serializers.ModelSerializer):
         # ]
 
 
+class PostPreviewSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Post
+        fields = [
+            'id', 'title', 'slug', 'read_time', 'updated', 'headline', 'published', 'word_count', 'post_type',
+        ]
+
+
 class UpdatePostSerializer(serializers.ModelSerializer):
-    
+
     class Meta:
         model = Post
         fields = '__all__'
-        
-        
+
+
 class PostTopicIdeasSerializer(serializers.ModelSerializer):
     class Meta:
         model = PostTopicIdeas
         fields = '__all__'
-        
-         
+
+
 class PostOutlineItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = PostOutlineItem
         fields = '__all__'
-        
+
+
 class PostOutlineSerializer(serializers.ModelSerializer):
     class Meta:
         depth = 1

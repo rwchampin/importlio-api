@@ -9,9 +9,10 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage as storage
 from django.core.files import File
 from django.core.files.uploadedfile import InMemoryUploadedFile 
-
+from .filler_words import clean_slug
 
 POST_STATUS = (
+    ('new', 'New'),
     ('draft', 'Draft'),
     ('published', 'Published'),
 )
@@ -26,123 +27,14 @@ RESPONSIVE_IMAGE_SIZES = (
     ('tablet', 1280),
     ('desktop', 1920),
 )
-MAX_FILLER_WORDS = 2
-FILLER_WORDS = [
-    "A",
-    "ABOUT",
-    "ACTUALLY",
-    "ALMOST",
-    "ALSO",
-    "ALTHOUGH",
-    "ALWAYS",
-    "AM",
-    "AN",
-    "AND",
-    "ANY",
-    "ARE",
-    "AS",
-    "AT",
-    "BE",
-    "BECAME",
-    "BECOME",
-    "BUT",
-    "BY",
-    "CAN",
-    "COULD",
-    "DID",
-    "DO",
-    "DOES",
-    "EACH",
-    "EITHER",
-    "ELSE",
-    "FOR",
-    "FROM",
-    "HAD",
-    "HAS",
-    "HAVE",
-    "HENCE",
-    "HOW",
-    "I",
-    "IF",
-    "IN",
-    "IS",
-    "IT",
-    "ITS",
-    "JUST",
-    "MAY",
-    "MAYBE",
-    "ME",
-    "MIGHT",
-    "MINE",
-    "MUST",
-    "MY",
-    "MINE",
-    "MUST",
-    "MY",
-    "NEITHER",
-    "NOR",
-    "NOT",
-    "OF",
-    "OH",
-    "OK",
-    "WHEN",
-    "WHERE",
-    "WHEREAS",
-    "WHEREVER",
-    "WHENEVER",
-    "WHETHER",
-    "WHICH",
-    "WHILE",
-    "WHO",
-    "WHOM",
-    "WHOEVER",
-    "WHOSE",
-    "WHY",
-    "WILL",
-    "WITH",
-    "WITHIN",
-    "WITHOUT",
-    "WOULD",
-    "YES",
-    "YET",
-    "YOU",
-    "YOUR",
-]
-
-def validate_no_filler_words(value):
-    # split the value into a list of words
-    words = value.split(' ')
-    
-    # count the number of filler words
-    filler_words = 0
-    for word in words:
-        if word.upper() in FILLER_WORDS:
-            filler_words += 1
-            
-    # raise an error if the number of filler words is greater than the max
-    if filler_words > MAX_FILLER_WORDS:
-        raise ValidationError(
-            f'Post contains too many filler words. Max filler words is {MAX_FILLER_WORDS}'
-        )
-        
-# no filler words in title, name or any string model fields mixin
-# class NoFillerWordsMixin(models.Model):
-#     # on save loop over all model fields that are type string and check for filler words
-#     def save(self, *args, **kwargs):
-#         for field in self._meta.fields:
-#             if isinstance(field, models.CharField or models.TextField or models.SlugField):
-#                 validate_no_filler_words(getattr(self, field.name))
-                
-#         super(self).save(*args, **kwargs)
-# Slug mixin
+ 
+ 
 class SlugMixin(models.Model):
     slug = models.SlugField(unique=True, blank=True, null=True, max_length=500)
     
     def save(self, *args, **kwargs):
-        # replace any underscores with dashes
-        slug = self.name.replace('_', '-')
-        
-        # remove any filler workds from title
+        slug = self.name
+        # remove any filler words
         
         self.slug = slugify(slug)
         super(SlugMixin, self).save(*args, **kwargs)
@@ -150,7 +42,7 @@ class SlugMixin(models.Model):
     class Meta:
         abstract = True
         
-        
+          
 class ThumbnailImage(SlugMixin, models.Model):
     name = models.CharField(max_length=255, blank=True, null=True)
     image = models.ImageField(
@@ -282,23 +174,28 @@ class Post(models.Model):
         
         
     def save(self, *args, **kwargs):
+        if self.post_status == 'new':
+            count = Post.objects.filter(post_status='draft').count()
+            self.post_status = 'draft'
+            self.title = f'New Draft {count + 1}'
+            self.content = 'New Draft'
+        
+
+            
         # Update slug if title changes
-        self.slug = slugify(self.title)
+        self.slug = clean_slug(self.title)
 
         # Calculate word count
-        self.word_count = len(self.content.split())
+        if self.content:
+            self.word_count = len(self.content.split())
         
         # Calculate read time
-        self.read_time = readtime.of_text(self.content).minutes
+        if self.content:
+            self.read_time = readtime.of_text(self.content).minutes
 
-        if self.read_time <= 0:
+        # if content is not present, set read time to 0
+        else:
             self.read_time = 1
-            
-        # Handle empty title and slug
-        if not self.title and not self.slug:
-            total_posts = Post.objects.count()
-            self.title = f'Untitled Post #{total_posts + 1}'
-            self.slug = slugify(self.title)
             
         
         # Create thumbnail and tablet images
@@ -356,3 +253,25 @@ class PostTopicIdeas(models.Model):
         
     def __str__(self):
         return self.topic
+    
+class PostRephraseSegment(models.Model):
+    html = models.TextField()
+    segment_index = models.IntegerField()
+    
+class PostRephrase(models.Model):
+    url = models.CharField(max_length=255, blank=True, null=True)
+    title = models.CharField(max_length=255, blank=True, null=True)
+    subtitle = models.CharField(max_length=255, blank=True, null=True)
+    headline = models.CharField(max_length=255, blank=True, null=True)
+    shadowText = models.CharField(max_length=300, blank=True, null=True)
+    excerpt = models.TextField(blank=True, null=True)
+    seo_title = models.CharField(max_length=400, blank=True, null=True)
+    seo_description = models.TextField(blank=True, null=True)
+    seo_keywords = models.TextField(blank=True, null=True)
+    html = models.TextField()
+    current_segment = models.IntegerField()
+    segments = models.ManyToManyField(PostRephraseSegment, blank=True)
+    rephrased_content = models.TextField(blank=True, null=True)
+    
+    def __str__(self):
+        return self.text

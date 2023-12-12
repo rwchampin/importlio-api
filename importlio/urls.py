@@ -34,7 +34,7 @@ urlpatterns = [
     path("api/", include("posts.urls")),
     path("api/", include("proxies.urls")),
     path("api/", include("ai.urls")),
-    # path("api/", include("products.urls")),
+    path("api/", include("products.urls")),
     path("api/", include("customers.urls")),
     path("api/", include("marketing.urls")),
     

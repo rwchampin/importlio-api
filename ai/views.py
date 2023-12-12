@@ -3,6 +3,8 @@ from .serializers import AssistantSerializer, ChatRoomSerializer, ChatMessageSer
 from .models import Assistant, ChatRoom, ChatMessage, AssistantModel
 from rest_framework import viewsets
 from .assistant import AssistantManager
+from rest_framework.decorators import api_view
+from bs4 import BeautifulSoup
 # Create your views here.
 
 class AssistantViewSet(viewsets.ModelViewSet):
@@ -21,3 +23,4 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
     queryset = ChatMessage.objects.all()
     serializer_class = ChatMessageSerializer
     
+

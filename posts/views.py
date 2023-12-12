@@ -3,12 +3,17 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from django.core.files.base import ContentFile
 from rest_framework.decorators import api_view
+from openai import OpenAI
+from .filler_words import clean_slug
 
+from bs4 import BeautifulSoup
+from ai.assistant import Assistant
+import base64, os, requests
 
-import base64
-from .models import Post, Tag, Category, PostType, PostTopicIdeas, PostOutline, PostOutlineItem
+from .models import Post, Tag, Category, PostType, PostTopicIdeas, PostOutline, PostOutlineItem, PostRephrase, PostRephraseSegment
 from .serializers import (
     PostSerializer, 
+    PostPreviewSerializer,
     TagSerializer, 
     CategorySerializer, 
     PostTypeSerializer, 
@@ -17,8 +22,7 @@ from .serializers import (
     PostOutlineItemSerializer,
     PostOutlineSerializer
 )
-
-
+from importlio.settings import BASE_DIR
 
 class PostViewSet(viewsets.ModelViewSet):
     serializer_class = PostSerializer
@@ -38,7 +42,7 @@ class PostViewSet(viewsets.ModelViewSet):
         
         # filter by post_status
         if post_status is not None:
-            queryset = queryset.filter(post_status=post_status).order_by('-updated')
+            queryset = queryset.filter(post_status=post_status).order_by('updated')
         
         # apply limit and reverse order if limit is specified
         if limit is not None:
@@ -46,6 +50,23 @@ class PostViewSet(viewsets.ModelViewSet):
             
             
         return queryset
+    
+    # post or create
+    def post(self, request, *args, **kwargs):
+        # Convert base64-encoded image to a file
+        featured_image_data = request.data.get('featured_image')
+        if featured_image_data:
+            image_format, image_data = featured_image_data.split(';base64,')
+            image_extension = image_format.split('/')[-1]
+            featured_image = ContentFile(base64.b64decode(image_data), name=f'featured_image.{image_extension}')
+            request.data['featured_image'] = featured_image
+
+        serializer = PostCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     # def list(self, request, *args, **kwargs):
     #     limit = request.query_params.get('limit', None)
@@ -59,7 +80,28 @@ class PostViewSet(viewsets.ModelViewSet):
 
     #     serializer = self.get_serializer(queryset, many=True)
     #     return Response(serializer.data)
-      
+
+class PostPreviewViewSet(viewsets.ModelViewSet):
+    serializer_class = PostPreviewSerializer
+    permission_classes = [AllowAny]  # Make this view public
+    lookup_field = 'slug'
+    queryset = Post.objects.all().order_by('-updated')
+    basename = 'post'  # Add this line to specify the basename
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['title', 'subtitle', 'content', 'tags__name', 'categories__name', 'post_type__name']
+    
+    # def list(self, request, *args, **kwargs):
+    #     limit = request.query_params.get('limit', None)
+
+    #     # order by updated
+    #     if limit is not None:
+    #         queryset = self.filter_queryset(self.get_queryset())[:int(limit)][::-1]
+    #     else:
+    #         queryset = self.filter_queryset(self.get_queryset())[::-1]
+            
+
+    #     serializer = self.get_serializer(queryset, many=True)
+    #     return Response(serializer.data)      
 class PostUpdateView(generics.UpdateAPIView):
     queryset = Post.objects.all()
     serializer_class = PostCreateSerializer
@@ -77,25 +119,25 @@ class PostUpdateView(generics.UpdateAPIView):
 
         return self.update(request, *args, **kwargs)
     
-class PostCreateView(generics.CreateAPIView):
-    authentication_classes = []
-    permission_classes = [AllowAny]
-    serializer_class = PostCreateSerializer
+# class PostCreateView(generics.CreateAPIView):
+#     authentication_classes = []
+#     permission_classes = [AllowAny]
+#     serializer_class = PostCreateSerializer
 
-    def post(self, request, *args, **kwargs):
-        # Convert base64-encoded image to a file
-        featured_image_data = request.data.get('featured_image')
-        if featured_image_data:
-            image_format, image_data = featured_image_data.split(';base64,')
-            image_extension = image_format.split('/')[-1]
-            featured_image = ContentFile(base64.b64decode(image_data), name=f'featured_image.{image_extension}')
-            request.data['featured_image'] = featured_image
+#     def post(self, request, *args, **kwargs):
+#         # Convert base64-encoded image to a file
+#         featured_image_data = request.data.get('featured_image')
+#         if featured_image_data:
+#             image_format, image_data = featured_image_data.split(';base64,')
+#             image_extension = image_format.split('/')[-1]
+#             featured_image = ContentFile(base64.b64decode(image_data), name=f'featured_image.{image_extension}')
+#             request.data['featured_image'] = featured_image
 
-        serializer = PostCreateSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#         serializer = PostCreateSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class TagViewSet(viewsets.ModelViewSet):
     queryset = Tag.objects.all()
@@ -251,3 +293,87 @@ class PostOutlineItemViewSet(viewsets.ModelViewSet):
     serializer_class = PostOutlineItemSerializer
     permission_classes = [AllowAny]  # Make this view public
     queryset = PostOutlineItem.objects.all()
+    
+
+def parse_large_html(html):
+    soup = BeautifulSoup(html, 'html.parser')
+    import pdb; pdb.set_trace()
+    # get the html tag type of the html parent
+    html_parent_tag = soup.html.parent.name
+    
+  
+    
+# api endpoint that receives a string of html
+@api_view(['POST'])
+def rewrite_post(request):
+     # create a new assistant
+    assistant = Assistant()
+    # get the html from the request
+    url = request.data['url']
+
+    post = assistant.rephrase(url)
+    import pdb; pdb.set_trace()
+    # create a new post with the new content
+    post = Post.objects.create(
+        title=post['title'],
+        subtitle=post['subtitle'],
+        headline=post['headline'],
+        excerpt=post['excerpt'],
+        shadowText=post['shadowText'],
+        seo_title=post['seo_title'],
+        seo_description=post['seo_description'],
+        # seo_keywords=post['seo_keywords'],
+        content=post['post'],
+        post_status='published',
+    )
+    
+    post.save()
+    
+    # p = PostSerializer(post)
+    
+    return Response({'post': 'd'}, status=status.HTTP_200_OK)
+
+
+
+
+ 
+    
+    
+# api endpoint that receives a string of html
+@api_view(['GET'])
+def make_posts(request):
+    # get fulepath of ./posts.txt
+    pages = []
+    file_path = os.path.join(BASE_DIR, 'posts/posts.txt')
+    # open the file posts.txr and loop through each line
+    url = 'https://www.autods.com/blog/product-finding/amazon-best-selling-niches/'
+    h = requests.get(url)
+    html = h.text
+    soup = BeautifulSoup(html, 'html.parser')
+    # get title tag
+    title = soup.title.string
+    # get meta description tag
+    description = soup.find('meta', attrs={'name': 'description'})
+    
+    # get post-content div
+    post_content = soup.find('div', attrs={'class': 'post-content'})
+    
+    # turn post_content into a string
+    post_content = str(post_content)
+    
+    prompt = 'the title: ' + title + '\n' + 'the description: ' + description['content']
+    assistant = Assistant()   
+    t = assistant.create_info(prompt) 
+    import pdb; pdb.set_trace()
+    # c = assistant.rephrase(post_content)
+    import pdb; pdb.set_trace()
+    # create a new post
+   
+
+    return Response({'post': p.data}, status=status.HTTP_200_OK)
+
+
+
+
+ 
+    

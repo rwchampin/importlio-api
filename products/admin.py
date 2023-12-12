@@ -2,5 +2,5 @@ from django.contrib import admin
 from .models import Product, SearchURL
 # Register your models here.
 
-# admin.site.register(Product)
-# admin.site.register(SearchURL)
+admin.site.register(Product)
+admin.site.register(SearchURL)
