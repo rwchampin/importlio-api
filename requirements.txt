@@ -69,6 +69,7 @@ pydantic==2.5.2
 pydantic_core==2.14.5
 pyee==9.0.4
 PyJWT==2.7.0
+PyMySQL==1.1.0
 pyquery==2.0.0
 python-dateutil==2.8.2
 python-dotenv==1.0.0
