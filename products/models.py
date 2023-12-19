@@ -16,7 +16,7 @@ class Product(models.Model):
     
 class SearchURL(models.Model):
     url = models.TextField(default='', null=True, blank=True)
-    products = models.ManyToManyField(Product, blank=True)
+    products = models.ManyToManyField(Product, blank=True,null=True)
     
     def __str__(self):
         return self.url

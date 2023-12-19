@@ -1,20 +1,17 @@
 from django.conf import settings
 from rest_framework.views import APIView, Response, status
-from rest_framework.generics import ListAPIView, CreateAPIView, RetrieveAPIView, UpdateAPIView, DestroyAPIView
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
 from djoser.social.views import ProviderAuthView
-from rest_framework.decorators import api_view
 
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
     TokenVerifyView
 )
-from .models import UserAccount
-from rest_framework.permissions import AllowAny
-from .serializers import UserAccountSerializer
+from .models import UserAccount, ContactMessage
+from .serializers import UserAccountSerializer, ContactMessageSerializer
 
 class CustomProviderAuthView(ProviderAuthView):
     def post(self, request, *args, **kwargs):
@@ -130,3 +127,12 @@ class UserAccountViewSet(viewsets.ModelViewSet):
     lookup_field = 'email'
     
 
+
+class ContactMessageViewSet(viewsets.ModelViewSet):
+    queryset = ContactMessage.objects.all()
+    serializer_class = ContactMessageSerializer
+    authentication_classes = []
+    permission_classes = []
+    lookup_field = 'email'
+    
+    

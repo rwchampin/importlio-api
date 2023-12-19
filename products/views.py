@@ -63,22 +63,11 @@ def get_data(request):
     url = request.data['url'] 
 
     # check if the url is already in the database
-    search_url = SearchURL.objects.get(url=url)
+    search_url, created = SearchURL.objects.get_or_create(url=url)
 
-    if search_url is not None:
-        # get the products from the search url
-        products = search_url.products.all()
-
-        # serialize the products
-        serializer = ProductSerializer(products, many=True)
-        
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    # Create an Extractor by reading from the YAML file
-    search_url = saveSearchURL(url)
     
     # get the html from the url
-    res = scrape(search_url)
+    res = scrape(search_url.url)
 
     if len(res['products']) > 0:
         # save the products to the database
@@ -116,14 +105,7 @@ def saveProducts(data):
         
     
     return saved_products
-
-def saveSearchURL(url):
-    try:
-        search_url = SearchURL.objects.create(url=url)
-    except:
-        return False
-    
-    return search_url     
+   
  
     
 def addProductsToSearchURL(url, products):

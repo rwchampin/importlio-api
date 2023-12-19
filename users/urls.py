@@ -5,12 +5,18 @@ from .views import (
     CustomTokenRefreshView,
     CustomTokenVerifyView,
     LogoutView,
-    UserAccountViewSet,
+    ContactMessageViewSet
+    # send_admin_notification,
+    # UserAccountViewSet
+    
 )
 from rest_framework import routers
 from django.conf.urls import include
 
 
+router = routers.DefaultRouter()
+
+router.register(r'contact-messages', ContactMessageViewSet, basename='contact-messages')
 
 urlpatterns = [
     
@@ -25,4 +31,6 @@ urlpatterns = [
     path('jwt/refresh/', CustomTokenRefreshView.as_view()),
     path('jwt/verify/', CustomTokenVerifyView.as_view()),
     path('logout/', LogoutView.as_view()),
+    # add router urls
+    path('', include(router.urls)),
 ]

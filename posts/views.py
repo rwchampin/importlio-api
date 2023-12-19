@@ -4,7 +4,8 @@ from rest_framework.permissions import AllowAny
 from django.core.files.base import ContentFile
 from rest_framework.decorators import api_view
 from openai import OpenAI
-from .filler_words import clean_slug
+from django.utils.text import slugify
+
 
 from bs4 import BeautifulSoup
 from ai.assistant import Assistant
@@ -28,7 +29,7 @@ class PostViewSet(viewsets.ModelViewSet):
     serializer_class = PostSerializer
     permission_classes = [AllowAny]  # Make this view public
     lookup_field = 'slug'
-    queryset = Post.objects.filter(post_status='published').order_by('-updated')
+    queryset = Post.objects.filter(post_status='published').order_by('updated')
     basename = 'post'  # Add this line to specify the basename
     filter_backends = [filters.SearchFilter]
     search_fields = ['title', 'subtitle', 'content', 'tags__name', 'categories__name', 'post_type__name']
@@ -301,6 +302,12 @@ def parse_large_html(html):
     # get the html tag type of the html parent
     html_parent_tag = soup.html.parent.name
     
+def concatenate_strings_with_commas(strings):
+    if not strings:
+        return ""
+    
+    concatenated_string = ",".join(strings)
+    return concatenated_string
   
     
 # api endpoint that receives a string of html
@@ -312,8 +319,13 @@ def rewrite_post(request):
     url = request.data['url']
 
     post = assistant.rephrase(url)
-    import pdb; pdb.set_trace()
+    # get 3 random tags
+    tags = Tag.objects.order_by('?')[:3]
+    # get 3 random categories
+    categories = Category.objects.order_by('?')[:3]
     # create a new post with the new content
+    featured_image_title = slugify(post['title']) + '.jpg'
+    img_content = post['featured_image']
     post = Post.objects.create(
         title=post['title'],
         subtitle=post['subtitle'],
@@ -322,11 +334,18 @@ def rewrite_post(request):
         shadowText=post['shadowText'],
         seo_title=post['seo_title'],
         seo_description=post['seo_description'],
-        # seo_keywords=post['seo_keywords'],
-        content=post['post'],
+        # remove the array brackets and add the csv to the seo keywords
+        seo_keywords=concatenate_strings_with_commas(post['seo_keywords']),
+        content=post['content'],
         post_status='published',
+        # get random post type
+        post_type=PostType.objects.order_by('?').first(),
     )
     
+    
+    post.featured_image.save(featured_image_title, ContentFile(img_content))
+    post.tags.set(tags)
+    post.categories.set(categories)
     post.save()
     
     # p = PostSerializer(post)
@@ -374,6 +393,4 @@ def make_posts(request):
 
 
 
-
  
-    

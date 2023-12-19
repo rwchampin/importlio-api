@@ -1,8 +1,9 @@
 from django.conf import settings
 from djoser.signals import user_registered, user_activated
 from django.dispatch import receiver
-from .models import UserAccount
+from .models import UserAccount, ContactMessage
 from django.core.mail import send_mail
+from django.db.models.signals import post_save
 
 admin_list = [
     settings.EMAIL_HOST_USER,
@@ -47,3 +48,13 @@ def send_admin_notification(user, request, **kwargs):
         # if new user is not valid throw an error and log it
         print("New user activation failed.")
         return Exception("New user activation failed.")
+    
+@receiver(post_save, sender=ContactMessage)
+def send_email_on_creation(sender, instance, created, **kwargs):
+    if created:  # Only send email on creation, not on update
+        subject = 'New Contact Form Submission'
+        message = f'Name: {instance.name}\n\nEmail: {instance.email}\n\nMessage: {instance.message}'
+        from_email = settings.DEFAULT_FROM_EMAIL
+        recipient_list = ['rwchampin@gmail.com', settings.DEFAULT_FROM_EMAIL]
+
+        send_mail(subject, message, from_email, recipient_list)

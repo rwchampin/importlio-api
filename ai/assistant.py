@@ -16,7 +16,7 @@ system_messages = {
     'REPHRASE': 'You will parse large strings of html and rewrite/rephrase the inner text of the html so that it is totally unique.  you will return a totally rewritten string containing the same html, and NEW unique inner text of the html.  You will rewrite the inner text while keeping the same overall concept of the initial topic.   You will return me a new string containing the html tags and the newly written inner text.  For example you will be given a string such as: `<section><h2>How to make a website</h2><p>First you need to learn HTML, CSS, and Javascript.</p></section>` and you will return a new string such as: `<section><h2>Building Websites: A comprehensive guide</h2><p>Building websites requires three primary skillsets.  They are HTML,CSS & javascript.</p></section>`.  The strings of html i provide you will often be more complex, with nested html structures that will require you to use your best judgement of the overall topic.',
     'basic_assistant': 'You are a helpful assistant that helps me by answering my questions.',
 }
-
+company_info = 'You are a helpful assistant for a Shopify dropshipping product importer and manager app. Keep the company in mind when answering questions.'
 class AssistantManager:
     # init function
     def __init__(self):
@@ -83,7 +83,7 @@ class Assistant:
             self.system_message = system_messages[type] 
             
     def set_model(self, model):
-        self.model = model
+        self.model = AssistantModel.objects.get(name=model)
         self.set_token_encoding()
 
     def set_token_encoding(self):
@@ -103,27 +103,29 @@ class Assistant:
     
     def create_title(self, data):
         print('create title')
+        t = json.dumps(data)
         response = self.client.chat.completions.create(
-            model=self.model.name,
+            model="gpt-3.5-turbo-1106",
             response_format={ "type": "json_object" },
             messages=[
-                {"role": "system", "content": "You are a helpful assistant who will recieve a json object containing a json object containing seo keywords and summaries about a blog post.  Write me an blog title with seo best practices in mind.  You must use 1 seo keyword as the first word in the title and at least 1 additional keyword in the title. The title must be under 60 characters long. You will return a json object containing the title. The json object will look like: {title: 'my title'}.  You will use the data I provide to calculate the best possible single answer for each." },
-                {"role": "user", "content": data}
+                {"role": "system", "content": company_info +"You will recieve a json object containing a json object containing seo keywords and summaries about a blog post.  Write me a blog title with seo best practices for a shopify dropshipping app in mind.  You must use 1 seo keyword as the first word in the title and at least 1 additional keyword in the title. The title must be under 60 characters long. You will return a json object containing the title. The json object will look like: {title: 'my title'}.  You will use the data I provide to calculate the best possible single answer for each." },
+                {"role": "user", "content": t}
             ]
         )
 
         res = response.choices[0].message.content
-        
+        print(json.loads(res)['title'])
         return json.loads(res)['title']
     
     def create_subtitle(self, data):
         print('create subtitle')
+        t = json.dumps(data)
         response = self.client.chat.completions.create(
-            model=self.model.name,
+            model="gpt-3.5-turbo-1106",
             response_format={ "type": "json_object" },
             messages=[
-                {"role": "system", "content": "You are a helpful assistant who will recieve a json object containing a json object containing seo keywords and summaries about a blog post.  Write me an blog subtitle with seo best practices in mind.  You must use 3-6 seo keywords in the subtitle. The subtitle must be under 60 characters long. You will return a json object containing the subtitle. The json object will look like: {subtitle: 'my subtitle'}.  You will use the data I provide to calculate the best possible single answer for each." },
-                {"role": "user", "content": data}
+                {"role": "system", "content": company_info + "You are a helpful assistant who will recieve a json object containing a json object containing seo keywords and summaries about a blog post.  Write me an blog subtitle with seo best practices in mind.  You must use 3-6 seo keywords in the subtitle. The subtitle must be under 60 characters long. You will return a json object containing the subtitle. The json object will look like: {subtitle: 'my subtitle'}.  You will use the data I provide to calculate the best possible single answer for each." },
+                {"role": "user", "content": t}
             ]
         )
 
@@ -133,12 +135,13 @@ class Assistant:
     
     def create_excerpt(self, data):
         print('create excerpt')
+        t = json.dumps(data)
         response = self.client.chat.completions.create(
-            model=self.model.name,
+            model="gpt-3.5-turbo-1106",
             response_format={ "type": "json_object" },
             messages=[
-                {"role": "system", "content": "You are a helpful assistant who will recieve a json object containing a json object containing seo keywords and summaries about a blog post.  Write me an blog excerpt with seo best practices in mind.  You must use 3-10 seo keywords in the excerpt. The excerpt must be under 120 characters long. You will return a json object containing the excerpt. The json object will look like: {excerpt: 'my excerpt'}.  You will use the data I provide to calculate the best possible single answer for each." },
-                {"role": "user", "content": data}
+                {"role": "system", "content": company_info + "You are a helpful assistant who will recieve a json object containing a json object containing seo keywords and summaries about a blog post.  Write me an blog excerpt with seo best practices in mind.  You must use 3-10 seo keywords in the excerpt. The excerpt must be under 120 characters long. You will return a json object containing the excerpt. The json object will look like: {excerpt: 'my excerpt'}.  You will use the data I provide to calculate the best possible single answer for each." },
+                {"role": "user", "content": t}
             ]
         )
 
@@ -148,12 +151,13 @@ class Assistant:
     
     def create_headline(self, data):
         print('create headline')
+        t = json.dumps(data)
         response = self.client.chat.completions.create(
-            model=self.model.name,
+            model="gpt-3.5-turbo-1106",
             response_format={ "type": "json_object" },
             messages=[
-                {"role": "system", "content": "You are a helpful assistant who will recieve a json object containing a json object containing seo keywords and summaries about a blog post.  Write me an blog headline with seo best practices in mind.  The headline must be under 5 words long. The headline is a small title that goes above the main title, as kind of an intro to the title. You will return a json object containing the headline. The json object will look like: {headline: 'my headline'}.  You will use the data I provide to calculate the best possible single answer for each." },
-                {"role": "user", "content": data}
+                {"role": "system", "content": company_info + "You are a helpful assistant who will recieve a json object containing a json object containing seo keywords and summaries about a blog post.  Write me an blog headline with seo best practices in mind.  The headline must be under 5 words long. The headline is a small title that goes above the main title, as kind of an intro to the title. You will return a json object containing the headline. The json object will look like: {headline: 'my headline'}.  You will use the data I provide to calculate the best possible single answer for each." },
+                {"role": "user", "content": t}
             ]
         )
 
@@ -163,12 +167,13 @@ class Assistant:
     
     def create_shadowText(self, data):
         print('create shadowText')
+        t = json.dumps(data)
         response = self.client.chat.completions.create(
-            model=self.model.name,
+            model="gpt-3.5-turbo-1106",
             response_format={ "type": "json_object" },
             messages=[
-                {"role": "system", "content": "You are a helpful assistant who will recieve a json object containing a json object containing seo keywords and summaries about a blog post.  Write me an blog shadowText title with seo best practices in mind.  The shadowText must be under 5 words long. The shadowText is a small title the is mainly for visual effect and is rotated sideways and positioned fixed on the left of the screen with an opaque effect but still has seo ranking possibilty.  The shadowtext title should have at least 1 seo keyword and be 3-5 words long. You will return a json object containing the shadowText. The json object will look like: {shadowText: 'my shadowText'}.  You will use the data I provide to calculate the best possible single answer for each." },
-                {"role": "user", "content": data}
+                {"role": "system", "content":company_info +  "You are a helpful assistant who will recieve a json object containing a json object containing seo keywords and summaries about a blog post.  Write me an blog shadowText title with seo best practices in mind.  The shadowText must be under 5 words long. The shadowText is a small title the is mainly for visual effect and is rotated sideways and positioned fixed on the left of the screen with an opaque effect but still has seo ranking possibilty.  The shadowtext title should have at least 1 seo keyword and be 3-5 words long. You will return a json object containing the shadowText. The json object will look like: {shadowText: 'my shadowText'}.  You will use the data I provide to calculate the best possible single answer for each." },
+                {"role": "user", "content": t}
             ]
         )
 
@@ -178,12 +183,13 @@ class Assistant:
     
     def create_seo_title(self, data):
         print('create seo_title')
+        t = json.dumps(data)
         response = self.client.chat.completions.create(
-            model=self.model.name,
+            model="gpt-3.5-turbo-1106",
             response_format={ "type": "json_object" },
             messages=[
-                {"role": "system", "content": "You are a helpful assistant who will recieve a json object containing a json object containing seo keywords and summaries about a blog post.  Write me an seo title with seo best practices in mind.  The seo title must be under 60 characters long. You will return a json object containing the seo_title. The json object will look like: {seo_title: 'my seo_title'}.  You will use the data I provide to calculate the best possible single answer for each." },
-                {"role": "user", "content": data}
+                {"role": "system", "content":company_info +  "You are a helpful assistant who will recieve a json object containing a json object containing seo keywords and summaries about a blog post.  Write me an seo title with seo best practices in mind.  The seo title must be under 60 characters long. You will return a json object containing the seo_title. The json object will look like: {seo_title: 'my seo_title'}.  You will use the data I provide to calculate the best possible single answer for each." },
+                {"role": "user", "content": t}
             ]
         )
 
@@ -193,12 +199,13 @@ class Assistant:
     
     def create_seo_description(self, data):
         print('create seo_description')
+        t = json.dumps(data)
         response = self.client.chat.completions.create(
-            model=self.model.name,
+            model="gpt-3.5-turbo-1106",
             response_format={ "type": "json_object" },
             messages=[
-                {"role": "system", "content": "You are a helpful assistant who will recieve a json object containing a json object containing seo keywords and summaries about a blog post.  Write me an seo description with seo best practices in mind.  The seo description must be under 160 characters long. You will return a json object containing the seo_description. The json object will look like: {seo_description: 'my seo_description'}.  You will use the data I provide to calculate the best possible single answer for each." },
-                {"role": "user", "content": data}
+                {"role": "system", "content":company_info +  "You are a helpful assistant who will recieve a json object containing a json object containing seo keywords and summaries about a blog post.  Write me an seo description with seo best practices in mind.  The seo description must be under 160 characters long. You will return a json object containing the seo_description. The json object will look like: {seo_description: 'my seo_description'}.  You will use the data I provide to calculate the best possible single answer for each." },
+                {"role": "user", "content": t}
             ]
         )
 
@@ -208,12 +215,13 @@ class Assistant:
     
     def create_seo_keywords(self, data):
         print('create seo_keywords')
+        t = json.dumps(data)
         response = self.client.chat.completions.create(
-            model=self.model.name,
+            model="gpt-3.5-turbo-1106",
             response_format={ "type": "json_object" },
             messages=[
-                {"role": "system", "content": "You are a helpful assistant who will recieve a json object containing a json object containing seo keywords and summaries about a blog post.  Write me an seo keywords with seo best practices in mind.  The seo keywords must be a csv list of 20-50 words or phrases for the meta keywords tag. You will return a json object containing the seo_keywords. The json object will look like: {seo_keywords: ['keyword1', 'keyword2', 'keyword3']}.  You will use the data I provide to calculate the best possible single answer for each." },
-                {"role": "user", "content": data}
+                {"role": "system", "content": company_info + "You are a helpful assistant who will recieve a json object containing a json object containing seo keywords and summaries about a blog post.  Write me an seo keywords with seo best practices in mind.  The seo keywords must be a csv list of 20-50 words or phrases for the meta keywords tag. You will return a json object containing the seo_keywords. The json object will look like: {seo_keywords: ['keyword1', 'keyword2', 'keyword3']}.  You will use the data I provide to calculate the best possible single answer for each." },
+                {"role": "user", "content":  t}
             ]
         )
 
@@ -243,18 +251,18 @@ class Assistant:
                 model="gpt-3.5-turbo-1106",
                 response_format={ "type": "json_object" },
                 messages=[
-                    {"role": "system", "content": "You are a helpful assistant who will recieve a chunk of text for a long blog post. Analyze the text and identify as many seo keywords or topics we can use to rank better on google.  You will also return an extensive summary of everyhing mentioned in the text to help us make additional data about the post.  You will return a json object containing the seo_keywords and summaries. The json object will look like: {seo_keywords: ['keyword1', 'keyword2', 'keyword3'], summaries: ['summary1', 'summary2', 'summary3']}.  You will use the data I provide to calculate the best possible single answer for each." }, 
+                    {"role": "system", "content": company_info + " you will recieve a chunk of text for a long blog post. Analyze the text and identify as many seo keywords or topics we can use to rank better on google for words and phrases that will benefit a shopify dropshipping app company.  You will also return an extensive summary of everyhing mentioned in the text to help us make additional data about the post.  You will return a json object containing the seo_keywords and summaries. The json object will look like: {seo_keywords: ['keyword1', 'keyword2', 'keyword3'], summaries: ['summary1', 'summary2', 'summary3']}.  You will use the data I provide to calculate the best possible single answer for each." }, 
 
                     {"role": "user", "content": str(chunk)}
                 ]
             )
             res = response.choices[0].message.content
             res = json.loads(res)
-            data['seo_keywords'].append(res['seo_keywords'])
-            data['summaries'].append(res['summaries'])
+            data['seo_keywords'] = data['seo_keywords'] + res['seo_keywords']
+            data['summaries'] = data['summaries'] + res['summaries']
         # split the chunks into chunks of 5000 tokens
          
-        import pdb; pdb.set_trace()
+
         
         post = {}
         post['title'] = self.create_title(data)
@@ -266,22 +274,7 @@ class Assistant:
         post['seo_description'] = self.create_seo_description(data)
         post['seo_keywords'] = self.create_seo_keywords(data)
         
-        # stringify info
-        import pdb; pdb.set_trace()
         
-        response = self.client.chat.completions.create(
-            model="gpt-3.5-turbo-1106",
-            response_format={ "type": "json_object" },
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant who will recieve a json object containing a list of titles, subtitles, headlines, shadowTexts, seo_titles, seo_descriptions, seo_keywords, seo_meta_keywords, excerpts, summaries.  You analyze the values for each field and return me the best value you can come up with based on the values provided.  You will return a json object containing the title, subtitle,excerpt, headline, shadowText, seo_title, seo_description, seo_keywords and meta_keywords. The json object will look like: {title: 'my title', excerpt: 'some excerpt', subtitle: 'my subtitle', headline: 'my headline', shadowText: 'my shadowText', seo_title: 'my seo_title', seo_description: 'my seo_description', seo_keywords: ['keyword1', 'keyword2', 'keyword3'], seo_meta_keywords: ['keyword1', 'keyword2', 'keyword3']}.  You will use the data I provide to calculate the best possible single answer for each." },
-                {"role": "user", "content": data}
-            ]
-        )
-
-        res = response.choices[0].message.content
-        
-        post = json.loads(res)
-        import pdb; pdb.set_trace()
         return post
     
     def rephrase(self, url):
@@ -301,7 +294,7 @@ class Assistant:
         # create post info
 
 
-        
+        post['featured_image'] = self.create_featured_image(post)
         
         
 
@@ -417,6 +410,32 @@ class Assistant:
 
         tojson = json.loads(tojson)
         return tojson
+    
+    def create_featured_image(self, post):
+        print('create featured image')
+        title = post['title']
+        subtitle = post['subtitle']
+        excerpt = post['excerpt']
+        keywords = post['seo_keywords']
+        # Define your prompt for DALL·E
+        prompt = 'My company is a Dropshipping product importer and management app for Shopify stores.  I have a blog post that needs a beautiful eye catching featured image.  The blog post is based on the following details.  The title: ' + title + ' and the subtitle: ' + subtitle + ' and the excerpt: ' + excerpt + ' and the seo keywords: ' + str(keywords) + '.  Please create a beautiful featured image for this blog post that makes sense for a post with the previously mentioned info.  The image should be landscape, hi-res, unique & eye catching.  The image should be 1920px1080px.  The image should be a png file.  The image should be under 1mb.  The image should be unique and not used anywhere else on the internet.  The image should be related to the topic of the blog post.  The image should be a beautiful image that will make people want to read the blog post.  The image should be a beautiful image that will make people want to read the blog post.  The image should use gradients & colors to make it stand out.'
+        
+        
+
+        # Call the OpenAI API to generate the image
+        response = self.client.images.generate(
+            model="dall-e-3",
+            prompt=prompt,
+            size="1792x1024",
+            n=1  # Specify the number of images to generate
+        )
+
+        img_url = response.data[0].url
+
+        # Download the image using requests
+        image_response = requests.get(img_url)
+        
+        return image_response.content
     
     
     def write_post(self, html):
