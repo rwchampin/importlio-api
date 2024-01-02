@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'marketing',
     "subscribers",
     'django_filters',
+    'social'
 ]
 
 MIDDLEWARE = [

@@ -9,5 +9,6 @@ router.register(r'chat-rooms', views.ChatRoomViewSet)
 router.register(r'chat-messages', views.ChatMessageViewSet)
 
 urlpatterns = [
+    path('ai-audio/', views.audio, name='audio'),
     path('ai/', include(router.urls)),
 ]

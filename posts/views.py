@@ -29,7 +29,7 @@ class PostViewSet(viewsets.ModelViewSet):
     serializer_class = PostSerializer
     permission_classes = [AllowAny]  # Make this view public
     lookup_field = 'slug'
-    queryset = Post.objects.filter(post_status='published').order_by('updated')
+    queryset = Post.objects.filter(post_status='published').order_by('-updated')
     basename = 'post'  # Add this line to specify the basename
     filter_backends = [filters.SearchFilter]
     search_fields = ['title', 'subtitle', 'content', 'tags__name', 'categories__name', 'post_type__name']
@@ -39,15 +39,15 @@ class PostViewSet(viewsets.ModelViewSet):
         limit = self.request.query_params.get('limit', None)
         post_status = self.request.query_params.get('post_status', None)
         
-        queryset = Post.objects.all()
+        queryset = Post.objects.all().order_by('-updated')
         
         # filter by post_status
         if post_status is not None:
-            queryset = queryset.filter(post_status=post_status).order_by('updated')
+            queryset = queryset.filter(post_status=post_status)
         
         # apply limit and reverse order if limit is specified
         if limit is not None:
-            queryset = queryset[:int(limit)][::-1]
+            queryset = queryset[:int(limit)]
             
             
         return queryset
@@ -311,31 +311,61 @@ def concatenate_strings_with_commas(strings):
   
     
 # api endpoint that receives a string of html
+post_sources = [
+    {
+        "name": 'amazon',
+        "url": "amazon.com"
+    },{
+        "name": 'autods',
+        "url": "autods.com"
+    }   
+]
+
+def get_post_source(url):
+    for source in post_sources:
+        # check if url contains the substring of the source url
+        if source['url'] in url:
+            return source['name']
+        
+    return None
+
 @api_view(['POST'])
 def rewrite_post(request):
-     # create a new assistant
+    # get the url from the request or make None
+    url = request.data.get('url', None)
+    # get the domain from the url
+    domain = get_post_source(url)
+    
+    
+    # if valid domain, make an assistant
+    if domain is None:
+        return Response({'message': 'Invalid domain'}, status=status.HTTP_400_BAD_REQUEST)
+    # create a new assistant
     assistant = Assistant()
-    # get the html from the request
-    url = request.data['url']
-
-    post = assistant.rephrase(url)
+    
+    config = {
+        "domain": domain,
+        "url": url
+    }
+    post = assistant.uniquify(url)
+    import pdb; pdb.set_trace()
     # get 3 random tags
-    tags = Tag.objects.order_by('?')[:3]
+    # tags = Tag.objects.order_by('?')[:3]
     # get 3 random categories
-    categories = Category.objects.order_by('?')[:3]
+    # categories = Category.objects.order_by('?')[:3]
     # create a new post with the new content
-    featured_image_title = slugify(post['title']) + '.jpg'
-    img_content = post['featured_image']
-    post = Post.objects.create(
+    # featured_image_title = slugify(post['title']) + '.jpg'
+    # img_content = post['featured_image']
+    np = Post.objects.create(
         title=post['title'],
         subtitle=post['subtitle'],
         headline=post['headline'],
         excerpt=post['excerpt'],
         shadowText=post['shadowText'],
-        seo_title=post['seo_title'],
-        seo_description=post['seo_description'],
+        seo_title=post['title'],
+        seo_description=post['excerpt'],
         # remove the array brackets and add the csv to the seo keywords
-        seo_keywords=concatenate_strings_with_commas(post['seo_keywords']),
+        seo_keywords=post['seo_keywords'],
         content=post['content'],
         post_status='published',
         # get random post type
@@ -343,10 +373,10 @@ def rewrite_post(request):
     )
     
     
-    post.featured_image.save(featured_image_title, ContentFile(img_content))
-    post.tags.set(tags)
-    post.categories.set(categories)
-    post.save()
+    # post.featured_image.save(featured_image_title, ContentFile(img_content))
+    # post.tags.set(tags)
+    # post.categories.set(categories)
+    np.save()
     
     # p = PostSerializer(post)
     

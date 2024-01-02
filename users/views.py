@@ -4,6 +4,7 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
 from djoser.social.views import ProviderAuthView
+from rest_framework.decorators import api_view
 
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -116,7 +117,7 @@ class LogoutView(APIView):
         response = Response(status=status.HTTP_204_NO_CONTENT)
         response.delete_cookie('access')
         response.delete_cookie('refresh')
-
+        import pdb; pdb.set_trace()
         return response
 
 class UserAccountViewSet(viewsets.ModelViewSet):
@@ -135,4 +136,16 @@ class ContactMessageViewSet(viewsets.ModelViewSet):
     permission_classes = []
     lookup_field = 'email'
     
+
+@api_view(['GET'])
+def get_user(request):
+    cookies = request.COOKIES
     
+    # look for the access token and refresh token
+    access_token = cookies.get('access')
+    refresh_token = cookies.get('refresh')
+    
+    # if the access token is found, return the user object
+    import pdb; pdb.set_trace()
+    
+    return Response({'message': 'User not found'}, status=status.HTTP_400_BAD_REQUEST)

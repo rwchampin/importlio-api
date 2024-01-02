@@ -1,22 +1,26 @@
 from openai import OpenAI
-import tiktoken, requests, json
+import tiktoken, requests, json, re, io
 from .models import Assistant, ChatRoom, AssistantModel
 from rest_framework import serializers, viewsets, status
 from rest_framework.response import Response
 from .split_string import split_string_with_limit
+import re
+from collections import Counter
+from nltk.corpus import stopwords
+import base64
+from io import BytesIO
+from PIL import Image
+from posts.models import Post, Tag, Category, PostType
 # from .models import Post, Tag, Category, PostType, PostTopicIdeas, PostOutline, PostOutlineItem, PostRephrase, PostRephraseItem
-
+from .audio_manager import AudioManager
+import whisper
+import pytube
+import os
+import tempfile
 # class for openai manager that handles the init, and custom functions
 from bs4 import BeautifulSoup
 
-system_messages = {
-    'title': 'The title should have 2 or more seo keywords in it and the first word must be one of the keywords.  Try to keep this title under 60 characters.',
-    'subtitle': 'The subtitle should have 2 or more seo keywords in it and the first word must be one of the keywords.  Try to keep this subtitle under 60 characters.',
-    'excerpt': 'The excerpt should have 2 or more seo keywords in it and the first word must be one of the keywords.  Try to keep this excerpt under 60 characters.',
-    'REPHRASE': 'You will parse large strings of html and rewrite/rephrase the inner text of the html so that it is totally unique.  you will return a totally rewritten string containing the same html, and NEW unique inner text of the html.  You will rewrite the inner text while keeping the same overall concept of the initial topic.   You will return me a new string containing the html tags and the newly written inner text.  For example you will be given a string such as: `<section><h2>How to make a website</h2><p>First you need to learn HTML, CSS, and Javascript.</p></section>` and you will return a new string such as: `<section><h2>Building Websites: A comprehensive guide</h2><p>Building websites requires three primary skillsets.  They are HTML,CSS & javascript.</p></section>`.  The strings of html i provide you will often be more complex, with nested html structures that will require you to use your best judgement of the overall topic.',
-    'basic_assistant': 'You are a helpful assistant that helps me by answering my questions.',
-}
-company_info = 'You are a helpful assistant for a Shopify dropshipping product importer and manager app. Keep the company in mind when answering questions.'
+
 class AssistantManager:
     # init function
     def __init__(self):
@@ -39,18 +43,28 @@ class Assistant:
     # init function
     def __init__(self, model_type='gpt-3.5-turbo'):
         self.client = OpenAI()
-        self.system_message = system_messages['REPHRASE']
+        
         self.model = AssistantModel.objects.get(name=model_type)
-        self.messages = self.set_system_message()
+
 
         self.token_encoding = tiktoken.encoding_for_model('gpt-3.5-turbo')
         self.max_tokens = 2000
+        
+        self.primary_keyword = ''
+        self.supporting_keywords = []
+        
+        self.company_info = 'You are a genius assistant for a tech company called, Importlio, who is building a website & app containing a set of tools to benefit dropshipping shopify users. Keep seo phrases, words & best practices that will benefit this sort of company when answering any and all questions.'
+        self.system_messages = {
+            # add vars to strings
+            'title': 'The titles first word MUST be the primary keyword,' + self.primary_keyword + ' and also contain one of the supporting keywords:' + ','.join(self.supporting_keywords) + '.  The title must be under 60 characters.',
+            'subtitle': 'The subtitle should have 2 or more seo keywords in it and the first word must be one of the keywords.  Try to keep this subtitle under 60 characters.',
+            'excerpt': 'The excerpt should have 2 or more seo keywords in it and the first word must be one of the keywords.  Try to keep this excerpt under 60 characters.',
+            'REPHRASE': 'You will parse large strings of html and rewrite/rephrase the inner text of the html so that it is totally unique.  you will return a totally rewritten string containing the same html, and NEW unique inner text of the html.  You will rewrite the inner text while keeping the same overall concept of the initial topic.   You will return me a new string containing the html tags and the newly written inner text.  For example you will be given a string such as: `<section><h2>How to make a website</h2><p>First you need to learn HTML, CSS, and Javascript.</p></section>` and you will return a new string such as: `<section><h2>Building Websites: A comprehensive guide</h2><p>Building websites requires three primary skillsets.  They are HTML,CSS & javascript.</p></section>`.  The strings of html i provide you will often be more complex, with nested html structures that will require you to use your best judgement of the overall topic.',
+            'basic_assistant': 'You are a helpful assistant that helps me by answering my questions.',
+        }
+
     # function to set the model
-    
-    def set_system_message(self):
-        m = {}
-        m['role'] = 'system'
-        m['content'] = self.system_message
+ 
     
     def add_user_message(self, message):
         m = {}
@@ -76,11 +90,7 @@ class Assistant:
         for m in self.client.models.list():
             print(m)
 
-    def set_system_message(self, type='REPHRASE', message=None):
-        if message:
-            self.system_message = message
-        else:
-            self.system_message = system_messages[type] 
+ 
             
     def set_model(self, model):
         self.model = AssistantModel.objects.get(name=model)
@@ -101,15 +111,15 @@ class Assistant:
             return False
         return True
     
-    def create_title(self, data):
+    def create_title(self):
+        # I WRITE A DETAILED PROMPT BASED ON MY NEEDS AND ASK FOR A NEW UNIQUE TITLE
         print('create title')
-        t = json.dumps(data)
+        prompt = self.company_info + 'You must write a blog post title for a blog post with a primary keyword of: ' + self.primary_keyword + ' and supporting keywords of: ' + ','.join(self.supporting_keywords) + ' and a summary of: ' + self.summary + '.  The title must be under 60 characters. The titles first word must be the primary keyword and must use 1-2 supporting keywords.  You will return a json object containing the title. The json object will look like: {title: "my title"}.'
         response = self.client.chat.completions.create(
             model="gpt-3.5-turbo-1106",
             response_format={ "type": "json_object" },
             messages=[
-                {"role": "system", "content": company_info +"You will recieve a json object containing a json object containing seo keywords and summaries about a blog post.  Write me a blog title with seo best practices for a shopify dropshipping app in mind.  You must use 1 seo keyword as the first word in the title and at least 1 additional keyword in the title. The title must be under 60 characters long. You will return a json object containing the title. The json object will look like: {title: 'my title'}.  You will use the data I provide to calculate the best possible single answer for each." },
-                {"role": "user", "content": t}
+                {"role": "user", "content": prompt },
             ]
         )
 
@@ -118,14 +128,14 @@ class Assistant:
         return json.loads(res)['title']
     
     def create_subtitle(self, data):
+        # SAME THING BUTASUBTITLE
         print('create subtitle')
-        t = json.dumps(data)
+        prompt = self.company_info + ' you must write a seo focused subtitle for a blog post with the title: ' + data['title'] + ' and a primary keyword of: ' + self.primary_keyword + ' and supporting keywords of: ' + ','.join(self.supporting_keywords) + ' and a summary of: ' + self.summary + '.  The subtitle must be under 60 characters. The subtitle must use the primary kew word and use 1-3 supporting keywords.  You will return a json object containing the subtitle. The json object will look like: {subtitle: my subtitle}.'
         response = self.client.chat.completions.create(
             model="gpt-3.5-turbo-1106",
             response_format={ "type": "json_object" },
             messages=[
-                {"role": "system", "content": company_info + "You are a helpful assistant who will recieve a json object containing a json object containing seo keywords and summaries about a blog post.  Write me an blog subtitle with seo best practices in mind.  You must use 3-6 seo keywords in the subtitle. The subtitle must be under 60 characters long. You will return a json object containing the subtitle. The json object will look like: {subtitle: 'my subtitle'}.  You will use the data I provide to calculate the best possible single answer for each." },
-                {"role": "user", "content": t}
+                {"role": "user", "content": prompt },
             ]
         )
 
@@ -134,14 +144,14 @@ class Assistant:
         return json.loads(res)['subtitle']
     
     def create_excerpt(self, data):
+        
         print('create excerpt')
-        t = json.dumps(data)
+        prompt = self.company_info + ' you must write a seo focused excerpt for a blog post with the title: ' + data['title'] + ' and a primary keyword of: ' + self.primary_keyword + ' and supporting keywords of: ' + ','.join(self.supporting_keywords) + ' and a summary of: ' + self.summary + '.  The excerpt must be under 120 characters. The excerpt must use the primary kew word and use 3-5 supporting keywords.  You will return a json object containing the excerpt. The json object will look like: {excerpt: my excerpt}.'
         response = self.client.chat.completions.create(
             model="gpt-3.5-turbo-1106",
             response_format={ "type": "json_object" },
             messages=[
-                {"role": "system", "content": company_info + "You are a helpful assistant who will recieve a json object containing a json object containing seo keywords and summaries about a blog post.  Write me an blog excerpt with seo best practices in mind.  You must use 3-10 seo keywords in the excerpt. The excerpt must be under 120 characters long. You will return a json object containing the excerpt. The json object will look like: {excerpt: 'my excerpt'}.  You will use the data I provide to calculate the best possible single answer for each." },
-                {"role": "user", "content": t}
+                {"role": "user", "content": prompt },
             ]
         )
 
@@ -151,13 +161,12 @@ class Assistant:
     
     def create_headline(self, data):
         print('create headline')
-        t = json.dumps(data)
+        prompt = self.company_info + ' you must write a seo focused headline for a blog post with the title: ' + data['title'] + ' and a primary keyword of: ' + self.primary_keyword + ' and supporting keywords of: ' + ','.join(self.supporting_keywords) + ' and a summary of: ' + self.summary + '.  The headline must be under 5 words long. The headline is a small title that goes above the main title, as kind of an intro to the title. You will return a json object containing the headline. The json object will look like: {headline: my headline}.'
         response = self.client.chat.completions.create(
             model="gpt-3.5-turbo-1106",
             response_format={ "type": "json_object" },
             messages=[
-                {"role": "system", "content": company_info + "You are a helpful assistant who will recieve a json object containing a json object containing seo keywords and summaries about a blog post.  Write me an blog headline with seo best practices in mind.  The headline must be under 5 words long. The headline is a small title that goes above the main title, as kind of an intro to the title. You will return a json object containing the headline. The json object will look like: {headline: 'my headline'}.  You will use the data I provide to calculate the best possible single answer for each." },
-                {"role": "user", "content": t}
+                {"role": "user", "content": prompt },
             ]
         )
 
@@ -167,13 +176,12 @@ class Assistant:
     
     def create_shadowText(self, data):
         print('create shadowText')
-        t = json.dumps(data)
+        prompt = self.company_info + ' you must write a seo focused shadowText for a blog post with the title: ' + data['title'] + ' and a primary keyword of: ' + self.primary_keyword + ' and supporting keywords of: ' + ','.join(self.supporting_keywords) + ' and a summary of: ' + self.summary + '.  The shadowText must be under 5 words long. The shadowText is a small title the is mainly for visual effect and is rotated sideways and positioned fixed on the left of the screen with an opaque effect but still has seo ranking possibilty.  The shadowtext title should have at least 1 seo keyword and be 3-5 words long. You will return a json object containing the shadowText. The json object will look like: {shadowText:  my shadowText}.'
         response = self.client.chat.completions.create(
             model="gpt-3.5-turbo-1106",
             response_format={ "type": "json_object" },
             messages=[
-                {"role": "system", "content":company_info +  "You are a helpful assistant who will recieve a json object containing a json object containing seo keywords and summaries about a blog post.  Write me an blog shadowText title with seo best practices in mind.  The shadowText must be under 5 words long. The shadowText is a small title the is mainly for visual effect and is rotated sideways and positioned fixed on the left of the screen with an opaque effect but still has seo ranking possibilty.  The shadowtext title should have at least 1 seo keyword and be 3-5 words long. You will return a json object containing the shadowText. The json object will look like: {shadowText: 'my shadowText'}.  You will use the data I provide to calculate the best possible single answer for each." },
-                {"role": "user", "content": t}
+                {"role": "user", "content": prompt },
             ]
         )
 
@@ -181,55 +189,25 @@ class Assistant:
         
         return json.loads(res)['shadowText']
     
-    def create_seo_title(self, data):
-        print('create seo_title')
-        t = json.dumps(data)
+    def create_seo_keywords(self):
+        print('create seo keywords')
+        prompt = self.company_info + ' you must write a list of seo meta keywords for a blog post with a primary keyword of: ' + self.primary_keyword + ' and supporting keywords of: ' + ','.join(self.supporting_keywords) + ' and a summary of: ' + self.summary + '. The list must me between 25-50 individual items.  An item can be either a single word or it can be a phrase.  Be sure to use the current primary and supporting keywords and build off of them to make the best possbile seo list.  You will return a json object containing the seo_keywords. The json object will look like: {seo_keywords:  [key1, key2, key3]}.'
         response = self.client.chat.completions.create(
             model="gpt-3.5-turbo-1106",
             response_format={ "type": "json_object" },
             messages=[
-                {"role": "system", "content":company_info +  "You are a helpful assistant who will recieve a json object containing a json object containing seo keywords and summaries about a blog post.  Write me an seo title with seo best practices in mind.  The seo title must be under 60 characters long. You will return a json object containing the seo_title. The json object will look like: {seo_title: 'my seo_title'}.  You will use the data I provide to calculate the best possible single answer for each." },
-                {"role": "user", "content": t}
-            ]
-        )
-
-        res = response.choices[0].message.content
-        
-        return json.loads(res)['seo_title']
-    
-    def create_seo_description(self, data):
-        print('create seo_description')
-        t = json.dumps(data)
-        response = self.client.chat.completions.create(
-            model="gpt-3.5-turbo-1106",
-            response_format={ "type": "json_object" },
-            messages=[
-                {"role": "system", "content":company_info +  "You are a helpful assistant who will recieve a json object containing a json object containing seo keywords and summaries about a blog post.  Write me an seo description with seo best practices in mind.  The seo description must be under 160 characters long. You will return a json object containing the seo_description. The json object will look like: {seo_description: 'my seo_description'}.  You will use the data I provide to calculate the best possible single answer for each." },
-                {"role": "user", "content": t}
-            ]
-        )
-
-        res = response.choices[0].message.content
-        
-        return json.loads(res)['seo_description']
-    
-    def create_seo_keywords(self, data):
-        print('create seo_keywords')
-        t = json.dumps(data)
-        response = self.client.chat.completions.create(
-            model="gpt-3.5-turbo-1106",
-            response_format={ "type": "json_object" },
-            messages=[
-                {"role": "system", "content": company_info + "You are a helpful assistant who will recieve a json object containing a json object containing seo keywords and summaries about a blog post.  Write me an seo keywords with seo best practices in mind.  The seo keywords must be a csv list of 20-50 words or phrases for the meta keywords tag. You will return a json object containing the seo_keywords. The json object will look like: {seo_keywords: ['keyword1', 'keyword2', 'keyword3']}.  You will use the data I provide to calculate the best possible single answer for each." },
-                {"role": "user", "content":  t}
+                {"role": "user", "content": prompt },
             ]
         )
 
         res = response.choices[0].message.content
         
         return json.loads(res)['seo_keywords']
-    
+     
     def create_details(self, soup):
+        # THIS FN TAKES THE TITLE TAG OF THE PAGE, AND OTHER META DATA,
+        # AND SENDS IT TO OPENAI WITH A PROMPT TELLING IT TO USE THE TITLE, DESCRIPTION 
+        # AND MAKEME A NEWTITLE, SUBTITLE, EXCERPT, HEADLINE, SHADOWTEXT, SEO_TITLE, SEO_DESCRIPTION, SEO_KEYWORDS
         title = soup.title.string
          # if description is present, get its inner text
         x = soup.select('meta[name="description"]')
@@ -244,14 +222,17 @@ class Assistant:
         data = {}
         data['seo_keywords'] = []
         data['summaries'] = []
+        # THIS IS A BIT CUSTOM AND NOT NEEDED BUT I TOTALLY REMOVE ALL THE HTML HERE AND CHUNK IT TO OPEN AI TO HELP IT MAKE
+        # ME AN OVERALL SUMARY FOR AN EXCERPT AMONG OTHER THINGS.
         chunks = split_string_with_limit(text, self.max_tokens/2, self.token_encoding)
 
+        # NOW I LOOP OVER EACH CHUNK AND SEND IT TO OPEN AI TO GET AN OVERALL SUMMARY
         for chunk in chunks:
             response = self.client.chat.completions.create(
                 model="gpt-3.5-turbo-1106",
                 response_format={ "type": "json_object" },
                 messages=[
-                    {"role": "system", "content": company_info + " you will recieve a chunk of text for a long blog post. Analyze the text and identify as many seo keywords or topics we can use to rank better on google for words and phrases that will benefit a shopify dropshipping app company.  You will also return an extensive summary of everyhing mentioned in the text to help us make additional data about the post.  You will return a json object containing the seo_keywords and summaries. The json object will look like: {seo_keywords: ['keyword1', 'keyword2', 'keyword3'], summaries: ['summary1', 'summary2', 'summary3']}.  You will use the data I provide to calculate the best possible single answer for each." }, 
+                    {"role": "system", "content": self.company_info + " you will recieve a chunk of text for a long blog post. Analyze the text and identify as many seo keywords or topics we can use to rank better on google for words and phrases that will benefit a shopify dropshipping app company.  You will also return an extensive summary of everyhing mentioned in the text to help us make additional data about the post.  You will return a json object containing the seo_keywords and summaries. The json object will look like: {seo_keywords: ['keyword1', 'keyword2', 'keyword3'], summaries: ['summary1', 'summary2', 'summary3']}.  You will use the data I provide to calculate the best possible single answer for each." }, 
 
                     {"role": "user", "content": str(chunk)}
                 ]
@@ -260,10 +241,12 @@ class Assistant:
             res = json.loads(res)
             data['seo_keywords'] = data['seo_keywords'] + res['seo_keywords']
             data['summaries'] = data['summaries'] + res['summaries']
-        # split the chunks into chunks of 5000 tokens
+
+            # CURRENTLY, I DONT RLY USE THE SUMMARY, BUT I USE THIS TO GENERATE A LIST OF SEO KEYWORDS
          
 
-        
+        # HERE IS MY OVERALL POST OBJ.
+        # I SPLIT IT UP INTO INDIVIDUAL FUNCTIONS TO MAKE EACH VITAL PART OF MY POST MODEL
         post = {}
         post['title'] = self.create_title(data)
         post['subtitle'] = self.create_subtitle(data)
@@ -273,62 +256,200 @@ class Assistant:
         post['seo_title'] = self.create_seo_title(data)
         post['seo_description'] = self.create_seo_description(data)
         post['seo_keywords'] = self.create_seo_keywords(data)
-        
+
+        # ALL OF THESE FUNCTIONS ARE SPECIFIC FOR MY POST MODEL BUT WHAT YOU DO HERE IS SEND DATA TO CHAT GPT TO CALCULATE NEW DATA YOU WANT.
         
         return post
     
-    def rephrase(self, url):
-        print('rephrase')
-        data = {}
-        html = requests.get(url)
+    
+    def create_main_info(self, soup):
+        print('create main info')
 
-        #make soup
-        soup = BeautifulSoup(html.text, 'html.parser')
+    def calculate_keyword_frequency(self, words):
 
-        # get class name post-content
-        post_content = soup.find('div', attrs={'class': 'post-content'})
+        # Count the frequency of each word
+        word_freq = Counter(words)
+
+        # Return the most common keyword
+        most_common_keyword = word_freq.most_common(1)
+
+        return most_common_keyword[0] if most_common_keyword else None
+
+    def create_core_data(self):
+        cleaned_text = self.soup.get_text()
+
+        # Convert to lowercase
+        cleaned_text = cleaned_text.lower()
         
-        # remove new lines
-        print('create info')
-        post= self.create_details(soup)
-        # create post info
+        # Remove special characters and non-alphabetic characters
+        cleaned_text = re.sub(r'[^a-zA-Z\s]', '', cleaned_text)
+
+        # Remove extra spaces and line breaks
+        cleaned_text = re.sub(r'\s+', ' ', cleaned_text).strip()
 
 
-        post['featured_image'] = self.create_featured_image(post)
+        # Remove stop words
+        stop_words = set(stopwords.words('english'))
+        words = cleaned_text.split()
+        filtered_words = [word for word in words if word not in stop_words]
+        cleaned_text = ' '.join(filtered_words)
         
+        response = self.client.chat.completions.create(
+            model="gpt-3.5-turbo-1106",
+            response_format={ "type": "json_object" },
+            messages=[
+                {"role": "system", "content":self.company_info +  "You will be givin a large string of text for a blog post based on one of the companies many features and target search terms.  You will analyze the text identify the best primary SEO keyword for the body of text as well as a reasonable list of supporting keywords for the key topic. You will also summarize the entire given text into the smallest paragrapgh sized summary you can, that captures all important topics of the text.  You will return a json object containing the primary_keyword, summary, and supporting_keywords. The json object will look like: {summary: 'short summary', primary_keyword: 'keyword1', supporting_keywords: ['keyword2', 'keyword3']}.  You will use the data I provide to calculate the best possible single answer for each." },
+                {"role": "user", "content": cleaned_text}
+            ]
+        )
+
+        res = json.loads(response.choices[0].message.content)
+        self.primary_keyword = res['primary_keyword']
+        self.supporting_keywords = res['supporting_keywords']
+        self.summary = res['summary']
+        self.cleaned_text = cleaned_text
+
+        if self.primary_keyword and self.supporting_keywords:
+            return True
+        return False
+       
         
+    def create_image(self, content):
+        print('create image')
+        prompt = self.company_info + 'You will receive a large string of text for a section of a blog post.  Create an image based on the given text.  The image will be the image for that section of the blog post.'
+        response = self.client.images.generate(
+            model="dall-e-3",
+            prompt=prompt,
+            size="1024x1024",
+            n=1  # Specify the number of images to generate
+        )
 
-        print('rephrase body')
-        chunks = self.prepare_html(str(post_content))
+        img_url = response.data[0].url
 
-        count = 0
-        responses = ''
-        for chunk in chunks:
+        # Download the image
+        img_response = requests.get(img_url)
+        img_data = BytesIO(img_response.content)
+
+        # Open the image using PIL
+        img = Image.open(img_data)
+
+        # Convert the image to base64
+        buffered = BytesIO()
+        img.save(buffered, format="PNG")  # You can choose a different format if needed
+        img_base64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
+
+        return img_base64
+            
+    
+    def create_content(self):
+        print('create content')
+        p = ''
+        for keyword in self.supporting_keywords:
+
+            prompt = self.company_info + 'You will receive a keyword & a large string of text for a blog post based on one of the companies many features and target search terms.  You will analyze the given text to get a good understanding of the topics of the post.  Then you will write a section and section title for the given keyword.  You will write a 3-8 paragraph section on the keywords topic using data you know and data in the given blog post. The section must be written in properly formatted html, using <p>, <b>, <ul>, etc when you see fit.   The section title must begin with the given keyword and use related keywords and be under 60 chars long. The title must be written without any html.  Use best practices  for SEO.  You will return a JSON object containing the title, section & a keyword seo optimized alt tag description for the sections image.  There should be no html for the alt tag but it should contain as many keywords as possible and be under 120 characters. The returned JSON object should be like: { title: some keyword optimized title, section: <p>my section content</p>, altTagDescription: keyword optimized alt tag desc of image}.'
             response = self.client.chat.completions.create(
-                model=self.model.name,
+                model="gpt-3.5-turbo-1106",
+                response_format={"type": "json_object"},
                 messages=[
-                    {
-                        'role': 'system',
-                        'content': self.system_message
-                    },{
-                        'role': 'user',
-                        'content': str(chunk)
-                    }
+                    {"role": "system", "content": prompt},
+                    {"role": "user", "content": json.dumps({'keyword': keyword, 'text': self.cleaned_text})}
                 ]
             )
-            m = response.choices[0].message.content
-            print(m)
-            print(count)
-            count += 1
-            responses += m
+
+            res = json.loads(response.choices[0].message.content)
             
+            title = res['title']
+            section = res['section']
+            altTagDescription = res['altTagDescription']
+            png = self.create_image(section)
+            sec = '<section><img src="data:image/png;base64,' + png + '" alt="' + altTagDescription + '" /><h2>' + title + '</h2>' + section + '</section>'
+            p += sec
 
-        # write the post
-        post['content'] = responses
+        return p
+        
+    
+    def get_meta(self):
+        title = self.soup.title.string
+        # if description is present, get its inner text
+        x = self.soup.select('meta[name="description"]')
+        # if x is not empty, get the content
+        if x:
+            description = x[0].attrs["content"]
+        else:
+            description = ''
+            
+        # get the keywords
+        x = self.soup.select('meta[name="keywords"]')
+        # if x is not empty, get the content
+        if x:
+            keywords = x[0].attrs["content"]
+        else:
+            keywords = ''
+            
+        prompt = self.company_info + 'You will receive data for a blog post the company has written.  Using the provided data, you will perfect the title, seo meta description, seo meta keywords.  You will analyze the current posts title: ' + title + ', description: ' + description + ', keywords: ' + keywords + '. And you will also use the new PRIMARY KEYWORD that we just made a few minutes ago: ' + self.primary_keyword + ', as well as the supporting keywords we have made: ' + ','.join(self.supporting_keywords) + ' in order to create the best possible title, seo meta description, seo meta keywords.  You will return a json object containing the title, seo_description, seo_keywords. The json object will look like: {title: title, seo_description: my seo_description, seo_keywords: [keyword1, keyword2, keyword3]}.  You will use the data I provide to calculate the best possible single answer for each.'
+    
+    def rephrase(self, url):
 
-        return post
+
+        data = {}
+        # GET THE HTML FROM THE URL
+        html = requests.get(url)
+        
+        # create beautiful soup object
+        self.soup = BeautifulSoup(html.text, 'html.parser')
+        if self.create_core_data():
+            data['title'] = self.create_title()
+            data['subtitle'] = self.create_subtitle(data)
+            data['excerpt'] = self.create_excerpt(data)
+            data['headline'] = self.create_headline(data)
+            data['shadowText'] = self.create_shadowText(data)
+            data['seo_keywords'] = self.create_seo_keywords()
+            data['seo_keywords'] = ",".join(data['seo_keywords'])
+            
+            data['content'] = self.create_content()
+            # data['featured_image'] = self.create_image(data)
+            
+            # get random post type
+            post_type = PostType.objects.order_by('?').first()
+            
+            # get random categories 3
+            categories = Category.objects.order_by('?')[:3]
+            
+            # get random tags 3
+            tags = Tag.objects.order_by('?')[:3]
+            
+            post = Post.objects.create(
+                title=data['title'],
+                subtitle=data['subtitle'],
+                excerpt=data['excerpt'],
+                headline=data['headline'],
+                shadowText=data['shadowText'],
+                seo_keywords=data['seo_keywords'],
+                content=data['content'],
+                seo_title=data['title'],
+                seo_description=data['excerpt'],
+                post_status='published',
+            )
+            
+            # add post type
+            post.post_type = post_type
+            
+            # add categories
+            for category in categories:
+                post.categories.add(category)
+                
+            # add tags
+            for tag in tags:
+                post.tags.add(tag)
+                
+                
+            post.save()
+            return data
+        
+        return False
     
     def removeAttrs(self, soup):
+        # I PERSONALLY LIKE TO REMOVE ALL HTML ATTRS TO MAKE THE TOKEN SIE AS SMALL AS POSSIBLE
         for tag in soup.find_all(True):
             tag.attrs = None
         return soup
@@ -359,8 +480,11 @@ class Assistant:
         
         # remove all video tags
         [s.extract() for s in soup('video')]
+        
+        # YOU DONT HAVE TO DO THE ABOVE BUT MY POSTS AREVERY LONGANDI DO NOT NEED THOSE ELEMENTS IN MY HTML
 
-        # get the first child
+        # get the first child AND LOOP OVER EVERY CHILD AND MAKE SURE THAT IT IS NOT TOO LONG
+        # IF IT IS, I SKIP IT AND MOVE ON TO THE NEXT CHILD
         parent = soup.contents[0]
         children = parent.contents
         newlist = []
@@ -452,5 +576,116 @@ class Assistant:
         import pdb; pdb.set_trace()
         
  
-         
-         
+    def uniquify(self, url):
+        print('uniquify')
+        
+        if url is None:
+            return False
+        #get the html
+        html = requests.get(url)
+        
+        # create beautiful soup object
+        self.soup = BeautifulSoup(html.text, 'html.parser')
+        
+        #get the title
+        title = self.soup.title.string
+        
+        # if description is present, get its inner text
+        x = self.soup.select('meta[name="description"]')
+        # if x is not empty, get the content
+        if x:
+            description = x[0].attrs["content"]
+        else:
+            description = ''
+            
+        # get the keywords
+        x = self.soup.select('meta[name="keywords"]')
+        # if x is not empty, get the content
+        if x:
+            keywords = x[0].attrs["content"]
+        else:
+            keywords = ''
+        
+        
+        # get the 2nd html element with a class of .content-small
+        post_html = self.soup.select('.content-small')[1]
+        
+        # remove all script tags
+        [s.extract() for s in post_html('script')]
+        
+        # remove all style tags
+        [s.extract() for s in post_html('style')]
+        
+        # remove all meta tags
+        [s.extract() for s in post_html('meta')]
+        
+        # remove all noscript tags
+        [s.extract() for s in post_html('noscript')]
+        
+        # remove all image tags
+        [s.extract() for s in post_html('img')]
+        
+        #remove all attributes the post_html
+        post_html = self.removeAttrs(post_html)
+        idx = 0
+        # split post_html into chunks of 5000 characters
+        chunks = split_string_with_limit(str(post_html), self.max_tokens/2, self.token_encoding)
+        post = ''
+        # loop over chunks and send to openai
+        for chunk in chunks:
+            
+            response = self.client.chat.completions.create(
+                model="gpt-3.5-turbo-1106",
+                response_format={ "type": "json_object" },
+                messages=[
+                    {"role": "system", "content": self.company_info + ". You ill receive a part of a long html blog post.  You will rewrite and reword the htmls inner text to make it unique. You will return a json object like {html: '<p>my new html</p>'}" },
+
+                    {"role": "user", "content": str(chunk)}
+                ]
+            )
+            res = response.choices[0].message.content
+            res = json.loads(res)
+            post += res['html']
+
+            print(idx)
+            print(len(chunks))
+            idx += 1
+
+        # prompt to send to openai describing how to use the current post title, description, keywords to create a new title, description, keywords that use the same primary keyword, and supporting keywords but are unique and different from the current title, description, keywords
+        prompt = self.company_info + 'You will receive a title, description, keywords for a blog post.  You will use the title, description, keywords to create a new title, description, keywords that use the same primary keyword, and supporting keywords but are unique and different from the current title, description, keywords. The title should be less than 60 characters & the first word must be the posts primary seo keyword.  The description should be less than 120 characters & must use as many keywords as possible. You will also generate a list of 50 keywords & phrases for the meta keywords tag. A subtitle is required and must use the main keyword and 2 other supporting keywords and will be less than 60 words. A short header title, a small intro title above the primary title is needed and is meant to be a short lead in phrase to the main title.  A Shadoe Text title i a 2-5 word alternative phrase for the overall topic of the post.  You will return a json object containing the title, excerpt, seo keywords, subtitle, headline, shadowText.  The json object will look like: {title: my title, excerpt: my excerpt, seo_keywords: [keyword1, keyword2, keyword3], subtitle: my subtitle, headline: my header title, shadowText: my shadow text title}.'
+        
+        response = self.client.chat.completions.create(
+            model="gpt-3.5-turbo-1106",
+            response_format={ "type": "json_object" },
+            messages=[
+                {"role": "system", "content": prompt },
+                {"role": "user", "content": json.dumps({'title': title, 'description': description, 'keywords': keywords}) }
+            ]
+        )
+        
+        res = response.choices[0].message.content
+        
+        # convert to json
+        res = json.loads(res)
+        
+        new_post = {
+            'title': res['title'],
+            'excerpt': res['excerpt'],
+            'subtitle': res['subtitle'],
+            'headline': res['headline'],
+            'shadowText': res['shadowText'],
+            'seo_keywords': res['seo_keywords'],
+            'content': post,
+            'featured_image': self.create_featured_image(res)
+        }
+        
+        return new_post
+    
+        
+    
+
+    def process_audio(self, audio_file):
+        am = AudioManager()
+        transcription = am.process_audio(audio_file)
+        
+        return transcription

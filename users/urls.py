@@ -5,7 +5,8 @@ from .views import (
     CustomTokenRefreshView,
     CustomTokenVerifyView,
     LogoutView,
-    ContactMessageViewSet
+    ContactMessageViewSet,
+    get_user
     # send_admin_notification,
     # UserAccountViewSet
     
@@ -25,6 +26,7 @@ urlpatterns = [
         CustomProviderAuthView.as_view(),
         name='provider-auth'
     ),
+    path('auth/get-user/', get_user, name='get-user'),
     # path('send-admin-email/', send_admin_notification.as_view()),
     # path('auth/users-email/<str:email>/', UserAccountViewSet.as_view({'get': 'retrieve'})),
     path('jwt/create/', CustomTokenObtainPairView.as_view()),
