@@ -89,7 +89,7 @@ class PostPreviewViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all().order_by('-updated')
     basename = 'post'  # Add this line to specify the basename
     filter_backends = [filters.SearchFilter]
-    search_fields = ['title', 'subtitle', 'content', 'tags__name', 'categories__name', 'post_type__name']
+    search_fields = ['title', 'subtitle', 'content', 'tags__name', 'categories__name', 'post_type__name', 'seo_keywords']
     
     # def list(self, request, *args, **kwargs):
     #     limit = request.query_params.get('limit', None)

@@ -121,7 +121,7 @@ class PostPreviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
         fields = [
-            'id', 'title', 'slug', 'read_time', 'updated', 'headline', 'published', 'word_count', 'post_type',
+            'id', 'title', 'slug', 'read_time', 'updated', 'headline', 'published', 'word_count', 'post_type', 'excerpt', 'subtitle', 'shadowText', 'shadow_text_theme', "title_text_theme", "subtitle_text_theme", "headline_text_theme", "featured_image"
         ]
 
 
