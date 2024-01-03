@@ -163,6 +163,8 @@ class Post(models.Model):
     seo_description = models.TextField(blank=True, null=True)
     seo_keywords = models.TextField(blank=True, null=True)
     
+    likes = models.IntegerField(default=0)
+    dislikes = models.IntegerField(default=0)
     # styles for the post
     shadow_text_theme = models.CharField(max_length=20, choices=POST_THEME, default='light')
     title_text_theme = models.CharField(max_length=20, choices=POST_THEME, default='light')
@@ -279,6 +281,30 @@ class PostRephraseSegment(models.Model):
     
 class PostRephrase(models.Model):
     url = models.CharField(max_length=255, blank=True, null=True)
+    status = models.CharField(max_length=255, blank=True, null=True)
+    previous_traffic = models.CharField(max_length=255, blank=True, null=True)
+    current_traffic = models.CharField(max_length=255, blank=True, null=True)
+    traffic_change = models.CharField(max_length=255, blank=True, null=True)
+    previous_traffic_value = models.CharField(max_length=255, blank=True, null=True)
+    current_traffic_value = models.CharField(max_length=255, blank=True, null=True)
+    traffic_value_change = models.CharField(max_length=255, blank=True, null=True)
+    previous_keywords = models.CharField(max_length=255, blank=True, null=True)
+    current_keywords = models.CharField(max_length=255, blank=True, null=True)
+    previous_top_keyword = models.CharField(max_length=255, blank=True, null=True)
+    current_top_keyword = models.CharField(max_length=255, blank=True, null=True)
+    
+    previous_top_keyword_country = models.CharField(max_length=255, blank=True, null=True)
+    current_top_keyword_country = models.CharField(max_length=255, blank=True, null=True)
+    
+    previous_top_keyword_volume = models.CharField(max_length=255, blank=True, null=True)
+    current_top_keyword_volume = models.CharField(max_length=255, blank=True, null=True)
+    
+    previous_top_keyword_position = models.CharField(max_length=255, blank=True, null=True)
+    current_top_keyword_position = models.CharField(max_length=255, blank=True, null=True)
+    
+    top_keyword_position_change = models.CharField(max_length=255, blank=True, null=True)
+    
+    
     title = models.CharField(max_length=255, blank=True, null=True)
     subtitle = models.CharField(max_length=255, blank=True, null=True)
     headline = models.CharField(max_length=255, blank=True, null=True)
@@ -294,3 +320,7 @@ class PostRephrase(models.Model):
     
     def __str__(self):
         return self.text
+    
+    
+    
+  

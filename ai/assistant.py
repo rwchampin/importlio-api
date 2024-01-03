@@ -24,7 +24,7 @@ from py_w3c.validators.html.validator import HTMLValidator
 
 # class for openai manager that handles the init, and custom functions
 from bs4 import BeautifulSoup
-import aiohttp
+
 import os
 import json
 
@@ -53,7 +53,6 @@ class Assistant:
         self.client = OpenAI()
         
         self.model = AssistantModel.objects.get(name=model_type)
-        self.session = aiohttp.ClientSession()
 
 
         self.token_encoding = tiktoken.encoding_for_model('gpt-3.5-turbo')
@@ -155,7 +154,7 @@ class Assistant:
     def create_excerpt(self, data):
         
         print('create excerpt')
-        prompt = self.company_info + ' you must write a seo focused excerpt for a blog post with the title: ' + data['title'] + ' and a primary keyword of: ' + self.primary_keyword + ' and supporting keywords of: ' + ','.join(self.supporting_keywords) + ' and a summary of: ' + self.summary + '.  The excerpt must be under 120 characters. The excerpt must use the primary kew word and use 3-5 supporting keywords.  You will return a json object containing the excerpt. The json object will look like: {excerpt: my excerpt}.'
+        prompt = self.company_info + ' you must write a seo focused excerpt for a blog post with the title: ' + data['title'] + ' and a primary keyword of: ' + self.primary_keyword + ' and supporting keywords of: ' + ','.join(self.supporting_keywords) + ' and a summary of: ' + self.summary + '.  The excerpt must be greater than 100 characters under 160 characters. The excerpt must use the primary kew word as the first word and use 3-5 supporting keywords.  You will return a json object containing the excerpt. The json object will look like: {excerpt: my excerpt}.'
         response = self.client.chat.completions.create(
             model="gpt-3.5-turbo-1106",
             response_format={ "type": "json_object" },
@@ -307,21 +306,19 @@ class Assistant:
             model="gpt-3.5-turbo-1106",
             response_format={ "type": "json_object" },
             messages=[
-                {"role": "system", "content":self.company_info +  "You will be givin a large string of text for a blog post based on one of the companies many features and target search terms.  You will analyze the text identify the best primary SEO keyword for the body of text as well as a reasonable list of supporting keywords for the key topic. You will also summarize the entire given text into the smallest paragrapgh sized summary you can, that captures all important topics of the text.  You will return a json object containing the primary_keyword, summary, and supporting_keywords. The json object will look like: {summary: 'short summary', primary_keyword: 'keyword1', supporting_keywords: ['keyword2', 'keyword3']}.  You will use the data I provide to calculate the best possible single answer for each." },
+                {"role": "system", "content":self.company_info +  "You will be givin a large string of text for a blog post based on one of the companies many features and target search terms. You will also get the posts primary keyord:" + self.primary_keyword + ". You will analyze the text identify & use the primary keyword to  base everything else off of. You will summarize the entire given text into the smallest paragrapgh sized summary you can, that captures all important topics of the text and aligns with the primary keyword.  You will return a json object containing the summary, and supporting_keywords. The json object will look like: {summary: 'short summary', supporting_keywords: ['keyword2', 'keyword3']}.  You will use the data I provide to calculate the best possible single answer for each." },
                 {"role": "user", "content": cleaned_text}
             ]
         )
 
         res = json.loads(response.choices[0].message.content)
-        self.primary_keyword = res['primary_keyword']
         self.supporting_keywords = res['supporting_keywords']
         self.summary = res['summary']
         self.cleaned_text = cleaned_text
 
-        print('primary keyword',self.primary_keyword)
         print('supporting keywords',self.supporting_keywords)
         print('summary',self.summary)
-        if self.primary_keyword and self.supporting_keywords:
+        if self.supporting_keywords:
             return True
         return False
        
@@ -441,16 +438,16 @@ class Assistant:
         
         return json.loads(res)['slug']
     
-    def rephrase(self, url):
+    def rephrase(self, url, keyword):
         rrr = requests.get(url)
         tt = rrr.elapsed.total_seconds()
         print('time to get url', tt)
         
-        vld = HTMLValidator()
+        self.primary_keyword = keyword
         data = {}
         # GET THE HTML FROM THE URL
         html = requests.get(url)
-
+    
         # create beautilful soup object
         self.soup = BeautifulSoup(html.text, 'html.parser')
         
@@ -872,69 +869,4 @@ class Assistant:
         transcription = am.process_audio(audio_file)
         
         return transcription
-    
-    async def validate_text_size_async(self, text):
-        c = self.get_token_count(text)
-        if (c*2) > self.max_tokens:
-            return False
-        return True
-
-    async def rephrase_chunk_async(self, chunk):
-        prompt = self.company_info + "You will receive a large string of html for a blog post based on one of the companies many features and target search terms.  You will rewrite & rephrase the inner text of all the html tags of the html string you receive so that it is totally unique. You will return the same amount of html that you are given. You will return a json object containing the html. Please make sure to close all html tags.  If any invalid html is given to you, please fix it and return always properly formatted html. The json object will look like: {html: '<section><h2>my title</h2><p>my paragraph</p></section>'}"
-        # Add your prompt logic
-
-        async with self.session.post(
-            "https://api.openai.com/v1/engines/gpt-3.5-turbo/completions",
-            headers={"Authorization": "Bearer " + OPENAI_KEY},
-            json={
-                "model": "gpt-3.5-turbo-1106",
-                "messages": [
-                    {"role": "system", "content": prompt},
-                    {"role": "user", "content": str(chunk)},
-                ],
-                "response_format": {"type": "json_object"},
-            },
-        ) as response:
-            data = await response.json()
-            return json.loads(data["choices"][0]["message"]["content"])["html"]
-
-    async def consolidate_items_async(self, items):
-        consolidated_list = []
-
-        tasks = [self.rephrase_chunk_async(chunk) for chunk in items]
-        consolidated_list = await asyncio.gather(*tasks)
-
-        print(len(consolidated_list))
-        return consolidated_list
-
-    async def rephrase_async(self, url):
-        vld = HTMLValidator()
-        data = {}
-
-        html = requests.get(url)
-        self.soup = BeautifulSoup(html.text, 'html.parser')
-        chunks = self.prepare_html()
-
-        if self.create_core_data():
-            data['title'] = self.create_title()
-            data['subtitle'] = self.create_subtitle(data)
-            data['excerpt'] = self.create_excerpt(data)
-            data['headline'] = self.create_headline(data)
-            data['shadowText'] = self.create_shadowText(data)
-            data['seo_keywords'] = self.create_seo_keywords()
-            data['seo_keywords'] = ",".join(data['seo_keywords'])
-
-            post_content = await self.consolidate_items_async(chunks)
-
-            print('rephrase complete')
-
-            data['content'] = ''.join(post_content)
-            
-            # Rest of your code...
-
-            return data
-
-        return False
-
-    async def close_session(self):
-        await self.session.close()
+     
