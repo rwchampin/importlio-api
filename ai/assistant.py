@@ -10,15 +10,23 @@ from nltk.corpus import stopwords
 import base64
 from io import BytesIO
 from PIL import Image
-from posts.models import Post, Tag, Category, PostType
+import asyncio
+from posts.models import Post, Tag, Category, PostType, PostIdeaUrl
 # from .models import Post, Tag, Category, PostType, PostTopicIdeas, PostOutline, PostOutlineItem, PostRephrase, PostRephraseItem
 from .audio_manager import AudioManager
-import whisper
-import pytube
+# import the ContentFile class
+from django.core.files.base import ContentFile
+from django.core.files import File
+# import the django slugify function
+from django.utils.text import slugify
 import os
-import tempfile
+from py_w3c.validators.html.validator import HTMLValidator
+
 # class for openai manager that handles the init, and custom functions
 from bs4 import BeautifulSoup
+import aiohttp
+import os
+import json
 
 
 class AssistantManager:
@@ -45,10 +53,11 @@ class Assistant:
         self.client = OpenAI()
         
         self.model = AssistantModel.objects.get(name=model_type)
+        self.session = aiohttp.ClientSession()
 
 
         self.token_encoding = tiktoken.encoding_for_model('gpt-3.5-turbo')
-        self.max_tokens = 2000
+        self.max_tokens = 500
         
         self.primary_keyword = ''
         self.supporting_keywords = []
@@ -114,7 +123,7 @@ class Assistant:
     def create_title(self):
         # I WRITE A DETAILED PROMPT BASED ON MY NEEDS AND ASK FOR A NEW UNIQUE TITLE
         print('create title')
-        prompt = self.company_info + 'You must write a blog post title for a blog post with a primary keyword of: ' + self.primary_keyword + ' and supporting keywords of: ' + ','.join(self.supporting_keywords) + ' and a summary of: ' + self.summary + '.  The title must be under 60 characters. The titles first word must be the primary keyword and must use 1-2 supporting keywords.  You will return a json object containing the title. The json object will look like: {title: "my title"}.'
+        prompt = self.company_info + 'You must write an SEO Optimized title for a blog post with a primary keyword of: ' + self.primary_keyword + ' and supporting keywords of: ' + ','.join(self.supporting_keywords) + ' and a summary of: ' + self.summary + '.  The title must be under 60 characters, use as few filler words as possible and cannot contain colons or semi colons or any special chars. The titles first word must be the primary keyword and must use 1-2 supporting keywords.  You will return a json object containing the title. The json object will look like: {title: "my title"}.'
         response = self.client.chat.completions.create(
             model="gpt-3.5-turbo-1106",
             response_format={ "type": "json_object" },
@@ -309,6 +318,9 @@ class Assistant:
         self.summary = res['summary']
         self.cleaned_text = cleaned_text
 
+        print('primary keyword',self.primary_keyword)
+        print('supporting keywords',self.supporting_keywords)
+        print('summary',self.summary)
         if self.primary_keyword and self.supporting_keywords:
             return True
         return False
@@ -360,9 +372,8 @@ class Assistant:
             
             title = res['title']
             section = res['section']
-            altTagDescription = res['altTagDescription']
-            png = self.create_image(section)
-            sec = '<section><img src="data:image/png;base64,' + png + '" alt="' + altTagDescription + '" /><h2>' + title + '</h2>' + section + '</section>'
+
+            sec = '<section><h2>' + title + '</h2>' + section + '</section>'
             p += sec
 
         return p
@@ -388,15 +399,64 @@ class Assistant:
             
         prompt = self.company_info + 'You will receive data for a blog post the company has written.  Using the provided data, you will perfect the title, seo meta description, seo meta keywords.  You will analyze the current posts title: ' + title + ', description: ' + description + ', keywords: ' + keywords + '. And you will also use the new PRIMARY KEYWORD that we just made a few minutes ago: ' + self.primary_keyword + ', as well as the supporting keywords we have made: ' + ','.join(self.supporting_keywords) + ' in order to create the best possible title, seo meta description, seo meta keywords.  You will return a json object containing the title, seo_description, seo_keywords. The json object will look like: {title: title, seo_description: my seo_description, seo_keywords: [keyword1, keyword2, keyword3]}.  You will use the data I provide to calculate the best possible single answer for each.'
     
+    def fix_html(self, html, errors):
+        print('fix html')
+        print(errors)
+        prompt = 'You will receive a json object containing errors about an html fragment and the html that needs to be fixed.  you will fix the html fragment and return the fixed html fragment.  You will return me a json object with the fixed html.  The json object will look like: {html: "<section><h2>my title</h2><p>my paragraph</p></section>"}'
+        response = self.client.chat.completions.create(
+            model="gpt-3.5-turbo-1106",
+            response_format={ "type": "json_object" },
+            messages=[
+                {"role": "system", "content": prompt },
+                {"role": "user", "content": json.dumps({'html': html, 'errors': errors})}
+            ]
+        )
+        
+        import pdb; pdb.set_trace()
+         # convert to json
+        
+        # get the response:
+        res = response.choices[0].message.content
+        
+       
+        
+        # get the html
+        html = res['html']
+        print('fixed html')
+        print(html)
+        return html
+        
+    def create_slug(self, data):
+        print('create slug')
+        prompt = self.company_info + 'You will receive a title for a blog post.  You will create a slug for the post.  The slug must be under 7-10 words long.  The slug must use the primary keyword and 1-2 supporting keywords. No special chars other than the dashes between words. You will return a json object containing the slug. The json object will look like: {slug: my slug}.'
+        response = self.client.chat.completions.create(
+            model="gpt-3.5-turbo-1106",
+            response_format={ "type": "json_object" },
+            messages=[
+                {"role": "user", "content": prompt },
+            ]
+        )
+
+        res = response.choices[0].message.content
+        
+        return json.loads(res)['slug']
+    
     def rephrase(self, url):
-
-
+        rrr = requests.get(url)
+        tt = rrr.elapsed.total_seconds()
+        print('time to get url', tt)
+        
+        vld = HTMLValidator()
         data = {}
         # GET THE HTML FROM THE URL
         html = requests.get(url)
-        
-        # create beautiful soup object
+
+        # create beautilful soup object
         self.soup = BeautifulSoup(html.text, 'html.parser')
+        
+        # parse the html
+        chunks = self.prepare_html()
+
         if self.create_core_data():
             data['title'] = self.create_title()
             data['subtitle'] = self.create_subtitle(data)
@@ -405,8 +465,44 @@ class Assistant:
             data['shadowText'] = self.create_shadowText(data)
             data['seo_keywords'] = self.create_seo_keywords()
             data['seo_keywords'] = ",".join(data['seo_keywords'])
+            data['slug'] = self.create_slug(data)
             
-            data['content'] = self.create_content()
+            post_content = ''
+            chunk_count = 1
+            for chunk in chunks:
+                        
+                print(')))))))))))))))))))))))))))))))))))))))))))))))))))))))')
+                
+                print('rephrase chunk' + str(chunk_count) + ' of ' + str(len(chunks)))
+                
+                prompt = self.company_info + "You will receive a large string of html for a blog post based on one of the companies many features and target search terms.  You will rewrite & rephrase the inner text of all the html tags of the html string you receive so that it is totally unique. You will return the same amount of html that you are given. You will return a json object containing the html. Please make sure to close all html tags.  If any invalid html is given to you, please fix it and return always properly formatted html. The json object will look like: {html: '<section><h2>my title</h2><p>my paragraph</p></section>'}"
+                
+                # CALL OPENAI TO REWRITE THE HTML
+                response = self.client.chat.completions.create(
+                    model="gpt-3.5-turbo-1106",
+                    messages=[
+                        {"role": "system", "content": prompt },
+                        {"role": "user", "content": str(chunk)}
+                    ],
+                    response_format={ "type": "json_object" },
+                )
+                
+                # GET THE RESPONSE
+                res = response.choices[0].message.content
+                
+                # parse the response
+                res = json.loads(res)
+                
+                post_content += res['html']
+                chunk_count += 1
+
+            print(')))))))))))))))))))))))))))))))))))))))))))))))))))))))')
+            print('rephrase complete')
+
+            print(')))))))))))))))))))))))))))))))))))))))))))))))))))))))')
+            
+            # make beautiful soup object
+            data['content'] = post_content
             # data['featured_image'] = self.create_image(data)
             
             # get random post type
@@ -431,7 +527,12 @@ class Assistant:
                 post_status='published',
             )
             
-            # add post type
+            # create featured image
+            featured_image, featured_image_alt = self.create_featured_image(data)
+            
+            post.image_alt_text = featured_image_alt
+            post.featured_image.save(slugify(data['title']) + '.png', ContentFile(featured_image), save=True)
+                # add post type
             post.post_type = post_type
             
             # add categories
@@ -442,8 +543,11 @@ class Assistant:
             for tag in tags:
                 post.tags.add(tag)
                 
+            if post.save():
+                print('post saved')
                 
-            post.save()
+              
+                
             return data
         
         return False
@@ -453,51 +557,112 @@ class Assistant:
         for tag in soup.find_all(True):
             tag.attrs = None
         return soup
-        
-    def prepare_html(self, html):
-         # remove all new lines
-        html = html.replace('\n', '')
-        
-        # create beautilful soup object
-        soup = BeautifulSoup(html, 'html.parser')
+    
+        # Your initialization code
 
+    def recursive_add_children(self, children):
+        newlist = []
+
+        # loop over children and print the length
+        for index, child in enumerate(children):
+            # convert child to string
+            child_string = str(child)
+
+            if self.valid_text_size(child_string):
+                new_child = child_string + str(children[index + 1]) if index + 1 < len(children) else ""
+
+                # check if the child string plus the next child string is a valid size
+                if self.valid_text_size(new_child):
+                    child_string = new_child
+                    # remove the child from the parent
+                    newlist.append(child_string)
+
+                    # Add more logic to obtain additional children or modify the existing ones
+                    additional_children = ...
+
+                    # Call the function recursively
+                    recursive_result = self.recursive_add_children(additional_children)
+
+                    # Extend the newlist with the result of the recursive call
+                    newlist.extend(recursive_result)
+
+        print(len(newlist))
+        return newlist
+
+    
+    def prepare_html(self):
+         # remove all new lines
+
+        # get parent element
         # remove all html attrs
-        soup = self.removeAttrs(soup)
             
         # remove all new lines
-        [s.extract() for s in soup('br')]
+        [s.extract() for s in self.soup('br')]
         # remove all script tags
-        [s.extract() for s in soup('script')]
+        [s.extract() for s in self.soup('script')]
+        
+        # remove all noscript tags
+        [s.extract() for s in self.soup('noscript')]
+        
+        # remove all iframe tags
+        [s.extract() for s in self.soup('iframe')]
         
         # remove all style tags
-        [s.extract() for s in soup('style')]
+        [s.extract() for s in self.soup('style')]
         
         # remove all meta tags
-        [s.extract() for s in soup('meta')]
+        [s.extract() for s in self.soup('meta')]
         
         # remove all image tags
-        [s.extract() for s in soup('img')]
+        [s.extract() for s in self.soup('img')]
         
         # remove all video tags
-        [s.extract() for s in soup('video')]
+        [s.extract() for s in self.soup('video')]
         
         # YOU DONT HAVE TO DO THE ABOVE BUT MY POSTS AREVERY LONGANDI DO NOT NEED THOSE ELEMENTS IN MY HTML
+        parent = self.soup.select('.post-content')
+        parent = parent[0]
+
+        self.removeAttrs(parent)
 
         # get the first child AND LOOP OVER EVERY CHILD AND MAKE SURE THAT IT IS NOT TOO LONG
         # IF IT IS, I SKIP IT AND MOVE ON TO THE NEXT CHILD
-        parent = soup.contents[0]
+
+        # get the html element ith the class of .content-small
+
+
         children = parent.contents
-        newlist = []
-         # loop over children and print the length
-        for child in children:
-            # convert child to string
-            child_string = str(child)
-            if self.valid_text_size(child_string):
-                # remove the child from the parent
-                newlist.append(child)
-        print(len(newlist))
-        return newlist
+
+        print(len(children))
+
+        children = self.consolidate_items(children)
+        
+        print(len(children))
+        
+        return children
     
+    def consolidate_items(self, items):
+        consolidated_list = []
+
+        index = 0
+        current_item = str(items[index])
+
+        while index < len(items) - 1:
+            next_item = str(items[index + 1])
+            combined_item = current_item + next_item
+
+            if self.valid_text_size(str(combined_item)):
+                current_item = combined_item
+            else:
+                consolidated_list.append(current_item)
+                current_item = str(items[index + 1])
+
+            index += 1
+
+        consolidated_list.append(current_item)
+
+        print(len(consolidated_list))
+        return consolidated_list
     
     def create_info(self, soup):
         print('create info')
@@ -559,7 +724,25 @@ class Assistant:
         # Download the image using requests
         image_response = requests.get(img_url)
         
-        return image_response.content
+        featured_image = image_response.content
+        
+        # prompt to write a alt tag description for the image
+        prompt = self.company_info + 'You must write an seo focused alt tag description for the featured image of the post with the details: title: ' + title + ' and subtitle: ' + subtitle + ' and excerpt: ' + excerpt + ' and seo keywords: ' + str(keywords) + '.  The alt tag description must be under 120 characters. The alt tag description must use the primary kew word and use 3-5 supporting keywords.  You will return a json object containing the alt_tag_description. The json object will look like: {alt_tag_description: my alt_tag_description}.'
+        
+        response = self.client.chat.completions.create(
+            model="gpt-3.5-turbo-1106",
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "user", "content": prompt },
+            ]
+        )
+        
+        res = json.loads(response.choices[0].message.content)
+        
+        featured_image_alt = res['alt_tag_description']
+        
+        
+        return featured_image, featured_image_alt
     
     
     def write_post(self, html):
@@ -689,3 +872,69 @@ class Assistant:
         transcription = am.process_audio(audio_file)
         
         return transcription
+    
+    async def validate_text_size_async(self, text):
+        c = self.get_token_count(text)
+        if (c*2) > self.max_tokens:
+            return False
+        return True
+
+    async def rephrase_chunk_async(self, chunk):
+        prompt = self.company_info + "You will receive a large string of html for a blog post based on one of the companies many features and target search terms.  You will rewrite & rephrase the inner text of all the html tags of the html string you receive so that it is totally unique. You will return the same amount of html that you are given. You will return a json object containing the html. Please make sure to close all html tags.  If any invalid html is given to you, please fix it and return always properly formatted html. The json object will look like: {html: '<section><h2>my title</h2><p>my paragraph</p></section>'}"
+        # Add your prompt logic
+
+        async with self.session.post(
+            "https://api.openai.com/v1/engines/gpt-3.5-turbo/completions",
+            headers={"Authorization": "Bearer " + OPENAI_KEY},
+            json={
+                "model": "gpt-3.5-turbo-1106",
+                "messages": [
+                    {"role": "system", "content": prompt},
+                    {"role": "user", "content": str(chunk)},
+                ],
+                "response_format": {"type": "json_object"},
+            },
+        ) as response:
+            data = await response.json()
+            return json.loads(data["choices"][0]["message"]["content"])["html"]
+
+    async def consolidate_items_async(self, items):
+        consolidated_list = []
+
+        tasks = [self.rephrase_chunk_async(chunk) for chunk in items]
+        consolidated_list = await asyncio.gather(*tasks)
+
+        print(len(consolidated_list))
+        return consolidated_list
+
+    async def rephrase_async(self, url):
+        vld = HTMLValidator()
+        data = {}
+
+        html = requests.get(url)
+        self.soup = BeautifulSoup(html.text, 'html.parser')
+        chunks = self.prepare_html()
+
+        if self.create_core_data():
+            data['title'] = self.create_title()
+            data['subtitle'] = self.create_subtitle(data)
+            data['excerpt'] = self.create_excerpt(data)
+            data['headline'] = self.create_headline(data)
+            data['shadowText'] = self.create_shadowText(data)
+            data['seo_keywords'] = self.create_seo_keywords()
+            data['seo_keywords'] = ",".join(data['seo_keywords'])
+
+            post_content = await self.consolidate_items_async(chunks)
+
+            print('rephrase complete')
+
+            data['content'] = ''.join(post_content)
+            
+            # Rest of your code...
+
+            return data
+
+        return False
+
+    async def close_session(self):
+        await self.session.close()

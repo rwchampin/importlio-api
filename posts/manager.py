@@ -9,6 +9,9 @@ import requests
 from ai.assistant import Assistant as AssistantAI
 
 posts = [
+    'https://www.autods.com/blog/dropshipping-tips-strategies/dropshipping-jobs',
+    'https://www.autods.com/blog/suppliers-marketplaces/dropship-wigs',
+    'https://www.autods.com/blog/product-finding/january-24-dropshipping-products',
     'https://www.autods.com/blog/dropshipping-tips-strategies/selling-online',
     'https://www.autods.com/blog/suppliers-marketplaces/furniture-dropshipping-suppliers',
     'https://www.autods.com/blog/dropshipping-tips-strategies/best-dropshipping-websites',

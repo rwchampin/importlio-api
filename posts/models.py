@@ -183,7 +183,8 @@ class Post(models.Model):
 
             
         # Update slug if title changes
-        self.slug = clean_slug(self.title)
+        if not self.slug or self.slug == '':
+            self.slug = clean_slug(self.title)
 
         # Calculate word count
         if self.content:
@@ -243,7 +244,25 @@ class Post(models.Model):
     def __str__(self):
         return self.title
 
-
+class PostIdeaSegment(models.Model):
+    html = models.TextField()
+    segment_index = models.IntegerField()
+class PostIdeaUrl(models.Model):
+    url = models.CharField(max_length=255, blank=True, null=True)
+    title = models.CharField(max_length=255, blank=True, null=True)
+    subtitle = models.CharField(max_length=255, blank=True, null=True)
+    headline = models.CharField(max_length=255, blank=True, null=True)
+    shadowText = models.CharField(max_length=300, blank=True, null=True)
+    excerpt = models.TextField(blank=True, null=True)
+    seo_title = models.CharField(max_length=400, blank=True, null=True)
+    seo_description = models.TextField(blank=True, null=True)
+    seo_keywords = models.TextField(blank=True, null=True)
+    html = models.TextField()
+    current_segment = models.IntegerField(default=0)
+    segments = models.ManyToManyField(PostIdeaSegment, blank=True)
+    
+    def __str__(self):
+        return self.url
 class PostTopicIdeas(models.Model):
     topic = models.CharField(max_length=255, blank=True, null=True)
     

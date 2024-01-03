@@ -117,11 +117,35 @@ class PostSerializer(serializers.ModelSerializer):
 
 
 class PostPreviewSerializer(serializers.ModelSerializer):
+    tags = TagSerializer(many=True, required=False)
+    categories = CategorySerializer(many=True, required=False)
+    post_type = PostTypeSerializer(required=False)
+    updated = serializers.DateTimeField(required=False)
+    updated_pretty = serializers.SerializerMethodField(
+        method_name='get_updated_pretty', required=False)
 
+    published = serializers.DateTimeField(required=False)
+    published_pretty = serializers.SerializerMethodField(
+        method_name='get_published_pretty', required=False)
+
+    def get_updated_pretty(self, obj):
+        if obj.updated:
+            return obj.updated.strftime("%d-%m-%Y")
+        return None
+
+    def get_published_pretty(self, obj):
+        if obj.published:
+            return obj.published.strftime("%d-%m-%Y")
+        return None
+    
+    featured_image = Base64ImageField(
+        max_length=None, use_url=True, required=False
+    )
+    
     class Meta:
         model = Post
         fields = [
-            'id', 'title', 'slug', 'read_time', 'updated', 'headline', 'published', 'word_count', 'post_type', 'excerpt', 'subtitle', 'shadowText', 'shadow_text_theme', "title_text_theme", "subtitle_text_theme", "headline_text_theme", "featured_image"
+            'id', 'tags', 'title', 'slug', 'read_time', 'updated','updated_pretty', 'headline', 'published', 'published_pretty', 'word_count', 'post_type', 'excerpt', 'subtitle', 'shadowText', "featured_image", "categories"
         ]
 
 
@@ -149,3 +173,5 @@ class PostOutlineSerializer(serializers.ModelSerializer):
         depth = 1
         model = PostOutline
         fields = '__all__'
+
+

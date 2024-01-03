@@ -64,6 +64,7 @@ proxybroker==0.3.2
 psycopg==3.1.10
 psycopg2==2.9.6
 psycopg2-binary==2.9.6
+py_w3c==0.3.1
 pycares==4.3.0
 pycparser==2.21
 pycurl==7.45.2
