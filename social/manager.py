@@ -2,33 +2,80 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.firefox.options import Options
 
 from selenium.webdriver.common.keys import Keys
 from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
+
 import time, random, sys
 from users.manager import Manager as UserManager
 platforms = {
     'THREADS': 'https://www.threads.net/login',
     'INSTAGRAM': 'https://www.instagram.com',
+    'FACEBOOK': 'https://www.facebook.com',
+    'TWITTER': 'https://www.twitter.com/login',
 }
 
-# geckodriver_path = '/opt/homebrew/bin/geckodriver'
-# firefox_options = webdriver.FirefoxOptions()
-# firefox_options.add_argument(f'--webdriver={geckodriver_path}')
+geckodriver_path = '/opt/homebrew/bin/geckodriver'
+firefox_options = Options()
+# geckodriver_path = '/usr/local/bin/geckodriver'
 
 class Manager:
-    def __init__(self, username, password, platform='INSTAGRAM', source_account='https://www.threads.net/@threads/'):
-        self.driver = webdriver.Chrome()
-        self.platform = platforms[platform]
-        self.source_account = source_account
-        self.username = username
-        self.password = password
+    def __init__(self):
+        self.driver = None
+        self.platform = None
+        self.source_account = None
+        self.username = None
+        self.password = None
         self.accounts_followed = []
         self.modal_trigger = None
         self.modal = None
         self.sources = None
-        self.total = 100
+        self.total = 1000
 
+    def fuckery(self):
+        # !/usr/bin/env python
+        print('If you get error "ImportError: No module named \'six\'" install six:\n'+\
+            '$ sudo pip install six');
+        print('To enable your free eval account and get CUSTOMER, YOURZONE and ' + \
+            'YOURPASS, please contact sales@brightdata.com')
+        import sys
+        if sys.version_info[0]==2:
+            import six
+            from six.moves.urllib import request
+            opener = request.build_opener(
+                request.ProxyHandler(
+                    {'http': 'http://brd-customer-hl_0affc3d3-zone-residential:v84v7rrygeim@brd.superproxy.io:22225',
+                    'https': 'http://brd-customer-hl_0affc3d3-zone-residential:v84v7rrygeim@brd.superproxy.io:22225'}))
+            print(opener.open('https://www.amazon.com/dp/B0B47D8BS4/ref=sspa_dk_detail_4?psc=1&pd_rd_i=B0B47D8BS4&pd_rd_w=m4UaP&content-id=amzn1.sym.386c274b-4bfe-4421-9052-a1a56db557ab&pf_rd_p=386c274b-4bfe-4421-9052-a1a56db557ab&pf_rd_r=EQPPPP0BMYPBB0APPKJ3&pd_rd_wg=jWBTs&pd_rd_r=3b021b7f-256c-4199-b925-876ffe34be45&s=shoes&sp_csd=d2lkZ2V0TmFtZT1zcF9kZXRhaWxfdGhlbWF0aWM&smid=A1SWHP93FGO1H2&spLa=ZW5jcnlwdGVkUXVhbGlmaWVyPUExSkpTMzUwVVY2RjVCJmVuY3J5cHRlZElkPUEwOTM2ODM3MUxBNFlaUTBJR0YxMiZlbmNyeXB0ZWRBZElkPUEwODI0MzIyMTNJTjM3UTlGS1czSyZ3aWRnZXROYW1lPXNwX2RldGFpbF90aGVtYXRpYyZhY3Rpb249Y2xpY2tSZWRpcmVjdCZkb05vdExvZ0NsaWNrPXRydWU=').read())
+        if sys.version_info[0]==3:
+            import urllib.request
+            opener = urllib.request.build_opener(
+                urllib.request.ProxyHandler(
+                    {'http': 'http://brd-customer-hl_0affc3d3-zone-residential:v84v7rrygeim@brd.superproxy.io:22225',
+                    'https': 'http://brd-customer-hl_0affc3d3-zone-residential:v84v7rrygeim@brd.superproxy.io:22225'}))
+            print(opener.open('https://www.amazon.com/dp/B0B47D8BS4/ref=sspa_dk_detail_4?psc=1&pd_rd_i=B0B47D8BS4&pd_rd_w=m4UaP&content-id=amzn1.sym.386c274b-4bfe-4421-9052-a1a56db557ab&pf_rd_p=386c274b-4bfe-4421-9052-a1a56db557ab&pf_rd_r=EQPPPP0BMYPBB0APPKJ3&pd_rd_wg=jWBTs&pd_rd_r=3b021b7f-256c-4199-b925-876ffe34be45&s=shoes&sp_csd=d2lkZ2V0TmFtZT1zcF9kZXRhaWxfdGhlbWF0aWM&smid=A1SWHP93FGO1H2&spLa=ZW5jcnlwdGVkUXVhbGlmaWVyPUExSkpTMzUwVVY2RjVCJmVuY3J5cHRlZElkPUEwOTM2ODM3MUxBNFlaUTBJR0YxMiZlbmNyeXB0ZWRBZElkPUEwODI0MzIyMTNJTjM3UTlGS1czSyZ3aWRnZXROYW1lPXNwX2RldGFpbF90aGVtYXRpYyZhY3Rpb249Y2xpY2tSZWRpcmVjdCZkb05vdExvZ0NsaWNrPXRydWU=').read())
+    # main actions
+    def get_followers(self, source_account, total=100):
+
+        self.source_account = source_account
+        self.total = total
+        self.follow()
+        return True
+    
+    def set_driver(self):
+        try:
+            self.driver = webdriver.Chrome(ChromeDriverManager().install())
+            return True
+        except Exception as e:
+            print(e)
+            return False
+
+    
+    def set_platform(self, platform):
+        pass
+    
     def is_user(self):
         return UserManager.get(self.username) is not None
     
@@ -39,7 +86,7 @@ class Manager:
             element.send_keys(char)
             time.sleep(delay)
             
-    def wait_random_time(self, min_seconds=2, max_seconds=15):
+    def wait_random_time(self, min_seconds=2, max_seconds=3):
         wait_time = random.randint(min_seconds, max_seconds)
         for i in range(wait_time + 1):
             progress = "/" * i + "." * (wait_time - i)
@@ -63,28 +110,86 @@ class Manager:
         # finally:
             # Close the browser window
             # self.driver.quit()
-
-    def login(self):
-        try:
-            self.wait_random_time()
-            # Find the input with type "text" and type the username
-            username_input = self.driver.find_element(By.CSS_SELECTOR, 'input[type="text"]')
-            # type username into username input in 5 seconds
+    
+    def login_instagram(self):
+        pass
+    
+    def login_twitter(self):
+        self.driver.get('https://twitter.com/i/flow/login')
+        
+        # wait for the login form to load
+        self.wait_random_time()
+        
+        # find the only input
+        inputs = self.driver.find_elements(By.CSS_SELECTOR, 'input')
+        
+        if inputs:
+            # type into the first input
+            self.slow_type(inputs[0], self.username)
             
-            # Find the input with type "password" and type the password
-            password_input = self.driver.find_element(By.CSS_SELECTOR, 'input[type="password"]')
+            # find the button with the text 'Log in'
+            nextbtn = self.driver.find_element(By.XPATH, '//*[contains(text(), "Next")]')
+            
+            if nextbtn:
+                nextbtn.click()
+                print('Login button clicked')
+                
+                # wait for the login form to load
+                self.wait_random_time()
+                
+                # find the input wiht a type of password
+                password_input = self.driver.find_element(By.CSS_SELECTOR, 'input[type="password"]')
+                
+                if password_input:
+                    self.slow_type(password_input, self.password)
+                    
+                    # wait for the login form to load
+                    self.wait_random_time()
+                    # find the button with the text 'Log in'
+                    login_button = self.driver.find_element(By.CSS_SELECTOR, 'div[data-testid="LoginForm_Login_Button"]')
+                    
+                    if login_button:
+                        login_button.click()
+                        print('Login button clicked')
+                    else:
+                        print('Could not find the login button')
+                        self.driver.quit()
+            else:
+                print('Could not find the login button')
+                self.driver.quit()
+    
+    def login_facebook(self):
+        pass
+    
+    def login_threads(self):
+        pass
+    
+    def login(self, username, password):
+        print('Logging in')
+        self.set_driver()
+        self.username = username
+        self.password = password
+        self.login_twitter()
+        return True
+        # try:
+        #     if self.platform == 'INSTAGRAM':
+        #         self.login_instagram()
+        #     elif self.platform == 'TWITTER':
+        #         self.login_twitter()
+        #     elif self.platform == 'FACEBOOK':
+        #         self.login_facebook()
+        #     elif self.platform == 'THREADS':
+        #         self.login_threads()
+                
+        #     else:
+        #         print('Invalid platform')
+        #         self.driver.quit()
+           
+        # except Exception as e:
+        #     print(e)
+        #     self.driver.quit()
 
-            # type into inputs
-            self.slow_type(username_input, self.username)
-            self.slow_type(password_input, self.password)
-
-            # Find the element with inner text "Log in" and click on it
-            login_button = self.driver.find_element(By.XPATH, '//*[text()="Log in"]')
-            login_button.click()
-        except Exception as e:
-            print(e)
-            self.driver.quit()
-
+        
 
     def go_to_source_account(self):
         print('Going to source account')
@@ -101,7 +206,7 @@ class Manager:
         self.wait_random_time()
         try:
             # Replace 'YourSubstring' with the desired substring of text
-            substring = 'followers'
+            substring = 'Followers'
 
             # Use XPath to find the element containing the substring
             element_xpath = f'//*[contains(text(), "{substring}")]'
@@ -149,28 +254,63 @@ class Manager:
 
     def follow_accounts(self):
         print('Following accounts')
-        try:
-            for source in self.sources:
-                # if we follow the max accounts, stop the loop
-                if len(self.accounts_followed) >= self.total:
-                    print('Followed max accounts, stopping')
-                    break
-                # if the amount followed is an increment of 10, take a break
-                if len(self.accounts_followed) % 10 == 0:
-                    print('Followed 10 accounts, taking a break')
-                    self.wait_random_time(30, 60)
-                    
-                # find a button element with the role of button
-                follow_button = source.find_element(By.CSS_SELECTOR, '[role="button"]')
-                # move the mouse to the follow button
-                follow_button.click()
-                a_tag = source.find_element(By.TAG_NAME, 'a')
-                href = a_tag.get_attribute('href')
-                href = href.rstrip('/')  # Use rstrip to remove trailing slash
-                self.accounts_followed.append(href)
-                print(f'Following {href}, accounts so far: {len(self.accounts_followed)}')
-                self.wait_random_time()
+        # get the section element with role of region
+        section = self.driver.find_element(By.CSS_SELECTOR, '[role="region"]')
 
+        # get all the buttons with a role of button in the section element
+        buttons = section.find_elements(By.CSS_SELECTOR, '[role="button"]')
+        
+
+        try:
+            for source in buttons:
+                # scroll to the button
+                self.driver.execute_script("arguments[0].scrollIntoView();", source)
+                # loop over children and check if the text is 'Follow', if so, click it, and leave the buttons loop and go fnd the message button recursively
+                for child in source.find_elements(By.CSS_SELECTOR, '[role="button"]'):
+                    if child.text == 'Follow':
+                        child.click()
+                        print('Follow button clicked')
+                        self.wait_random_time()
+                        break
+                    if child.text == 'Following':
+                        print('Already following')
+                        break
+                
+                # find a button element with the role of button
+                # follow_button = source.find_element(By.CSS_SELECTOR, '[role="button"]')
+                # source.click()
+                
+                # if follow_button:
+                #     # get the aria label attribute
+                #     aria_label = follow_button.get_attribute('aria-label')
+                    
+                #     if aria_label:
+                #         # if the aria label contains 'Following', skip this account
+                #         if 'Following' in aria_label or 'Requested' in aria_label:
+                #             print('Already following this account, skipping')
+                #             continue
+                #         elif 'Follow' in aria_label:
+                #             follow_button.click()
+                #             self.accounts_followed.append(source)
+                #             print(f'Following {source}, accounts so far: {len(self.accounts_followed)}')
+                #             self.wait_random_time()
+                # move the mouse to the follow button
+                # follow_button.click()
+                # a_tag = source.find_element(By.TAG_NAME, 'a')
+                # href = a_tag.get_attribute('href')
+                # href = href.rstrip('/')  # Use rstrip to remove trailing slash
+                # self.accounts_followed.append(href)
+                # print(f'Following {href}, accounts so far: {len(self.accounts_followed)}')
+                # self.wait_random_time()
+
+                # close the window
+                # self.driver.close()
+                
+                # self.login(self.username, self.password)
+                # self.go_to_source_account()
+                # # self.click_followers_modal()
+                # self.get_accounts()
+                
         except Exception as e:
             print(e)
             self.driver.quit()
@@ -181,8 +321,8 @@ class Manager:
 
         try:
             # find all the [data-pressable-container] = true elements
-            self.sources = self.modal.find_elements(By.CSS_SELECTOR, '[data-pressable-container="true"]')
-
+            self.sources = self.driver.find_elements(By.CSS_SELECTOR, '[data-testid="UserCell"]')
+            print(f'Found {len(self.sources)} sources')
             if len(self.sources) > 0:
                 self.follow_accounts()
             else:
@@ -227,11 +367,11 @@ class Manager:
             print(e)
             self.driver.quit()
     def follow(self):
-        self.go_to_platform()
-        self.login()
+        print('Follow')
         self.go_to_source_account()
-        self.click_followers_modal()
-        self.verify_modal_is_open()
+        self.get_accounts()
+        # self.verify_modal_is_open()
+        
 
         return True
 

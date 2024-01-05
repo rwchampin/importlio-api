@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework import viewsets, generics, status, filters
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from .manager import Manager
+from .manager import Manager as SocialManager
 from users.manager import Manager as UserManager
 from .models import SocialAccount
 from .serializers import SocialAccountSerializer
@@ -14,26 +14,28 @@ class SocialAccountViewSet(viewsets.ModelViewSet):
     
 @api_view(['POST'])
 def follow(request):
-    email = request.data.get('email', None)
-    username = request.data.get('username', None)
-    password = request.data.get('password', None)
+
     platform = request.data.get('platform', None)
+    action = request.data.get('action', None)
+    platform_username = request.data.get('platform_username', None)
+    platform_password = request.data.get('platform_password', None)
+    importlio_username = request.data.get('importlio_username', None)
+    importlio_password = request.data.get('importlio_password', None)
+
     
-    if platform is None:
-        return Response({'message': 'Platform not specified'}, status=status.HTTP_400_BAD_REQUEST)
-    
-    if email is None:
-        return Response({'message': 'Email not specified'}, status=status.HTTP_400_BAD_REQUEST)
-    
-    if username is None or password is None:
-        return Response({'message': 'Username or password not specified'}, status=status.HTTP_400_BAD_REQUEST)
-    
-    if platform and username and password and email:
-        if UserManager.get(email) is None:
-            return Response({'message': 'User does not exist'}, status=status.HTTP_400_BAD_REQUEST)
-        manager = Manager(username, password, platform)
-        manager.follow()
-    else:
+    try:
+        manager = SocialManager()
+        if manager.login(platform_username, platform_password):
+            manager.get_followers('https://twitter.com/thefoothunter1/followers')
+            if action == 'add followers':
+                manager.get_followers('https://twitter.com/X')
+            # elif action == 'unfollow':
+            #     manager.unfollow()
+            else:
+                return Response({'message': 'Invalid action'}, status=status.HTTP_400_BAD_REQUEST)
+
+    except Exception as e:
+        print('Error: ', e)
         return Response({'message': 'Invalid request'}, status=status.HTTP_400_BAD_REQUEST)
    
     return Response({'message': 'Followed'}, status=status.HTTP_200_OK)
